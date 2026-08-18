@@ -128,10 +128,17 @@ fn resolve_identity(
     username: &str,
     password: &str,
 ) -> Option<UserIdentity> {
-    accounts
-        .iter()
-        .find(|(u, p, _)| u == username && p == password)
-        .map(|(_, _, identity)| identity.clone())
+    // Compare both fields for every account in constant time (no short-circuit
+    // on the username) so login timing does not leak whether an account exists.
+    let mut matched: Option<UserIdentity> = None;
+    for (u, p, identity) in accounts {
+        let user_eq = u.len() == username.len() && bool::from(u.as_bytes().ct_eq(username.as_bytes()));
+        let pass_eq = p.len() == password.len() && bool::from(p.as_bytes().ct_eq(password.as_bytes()));
+        if user_eq && pass_eq {
+            matched = Some(identity.clone());
+        }
+    }
+    matched
 }
 
 /// Validates credentials against the environment-configured account store.
