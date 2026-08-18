@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DFIM Central Management Dashboard</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d;
+  --text: #c9d1d9; --muted: #8b949e; --green: #3fb950;
+  --red: #f85149; --yellow: #d2991d; --blue: #58a6ff;
+  --purple: #a371f7; --accent: #1f6feb;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:var(--bg); color:var(--text); }
+.header { background:var(--card); border-bottom:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; gap:16px; }
+.header h1 { font-size:20px; font-weight:600; }
+.header .ver { color:var(--muted); font-size:12px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px,1fr)); gap:12px; padding:16px 24px; }
+.stat { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; }
+.stat .label { font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+.stat .value { font-size:28px; font-weight:700; margin-top:4px; }
+.stat .sub { font-size:11px; color:var(--muted); margin-top:4px; }
+.row { display:flex; gap:12px; padding:0 24px 16px; flex-wrap:wrap; }
+.panel { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:16px; flex:1; min-width:400px; }
+.panel h3 { font-size:14px; color:var(--muted); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px; }
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { text-align:left; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--border); font-size:11px; text-transform:uppercase; }
+td { padding:6px 8px; border-bottom:1px solid var(--border); }
+.status { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+.healthy { background:var(--green); }
+.tampered { background:var(--red); }
+.pending { background:var(--yellow); }
+.blocked { background:var(--purple); }
+.badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:11px; font-weight:500; }
+.badge-healthy { background:rgba(63,185,80,0.15); color:var(--green); }
+.badge-tampered { background:rgba(248,81,73,0.15); color:var(--red); }
+.badge-pending { background:rgba(210,153,29,0.15); color:var(--yellow); }
+.btn { background:var(--accent); color:white; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-size:12px; }
+.btn:hover { opacity:0.85; }
+.btn-sm { padding:3px 8px; font-size:11px; }
+.btn-danger { background:var(--red); }
+.btn-outline { background:transparent; border:1px solid var(--border); color:var(--text); }
+input, select { background:var(--bg); border:1px solid var(--border); color:var(--text); padding:6px 10px; border-radius:6px; font-size:12px; }
+.toolbar { display:flex; gap:8px; align-items:center; padding:8px 24px; flex-wrap:wrap; }
+.alert-row { background:rgba(248,81,73,0.06); }
+.alert-row td { color:var(--red); }
+.footer { text-align:center; padding:16px; color:var(--muted); font-size:11px; border-top:1px solid var(--border); margin-top:16px; }
+.chart-bar { display:flex; gap:4px; align-items:end; height:40px; margin:8px 0; }
+.chart-bar div { flex:1; border-radius:3px 3px 0 0; min-width:20px; }
+.loading { text-align:center; padding:40px; color:var(--muted); }
+.error { background:rgba(248,81,73,0.1); border:1px solid var(--red); border-radius:6px; padding:12px; color:var(--red); font-size:13px; }
+.timer { font-size:11px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>DFIM Central Dashboard</h1>
+  <span class="ver">v1.0.0 · Phase 1 P1-M2</span>
+  <span style="flex:1"></span>
+  <span class="timer" id="timer">Auto-refresh: 5s</span>
+  <button class="btn btn-outline btn-sm" onclick="refreshAll()">Refresh</button>
+</div>
+
+<div class="toolbar">
+  <input type="text" id="searchAsset" placeholder="Search assets..." oninput="filterAssets()">
+  <select id="statusFilter" onchange="filterAssets()">
+    <option value="">All Status</option>
+    <option value="healthy">Healthy</option>
+    <option value="tampered">Tampered</option>
+    <option value="pending">Pending</option>
+  </select>
+  <select id="hostFilter" onchange="filterAssets()">
+    <option value="">All Hosts</option>
+  </select>
+  <button class="btn" onclick="enrollAsset()">+ Enroll Asset</button>
+</div>
+
+<div class="grid" id="fleetGrid">
+  <div class="stat"><div class="label">Total Assets</div><div class="value" id="totalAssets">—</div></div>
+  <div class="stat"><div class="label">Healthy</div><div class="value" style="color:var(--green)" id="healthyAssets">—</div><div class="sub" id="coveragePct"></div></div>
+  <div class="stat"><div class="label">Tampered</div><div class="value" style="color:var(--red)" id="tamperedAssets">—</div></div>
+  <div class="stat"><div class="label">Active Alerts</div><div class="value" style="color:var(--yellow)" id="activeAlerts">—</div></div>
+  <div class="stat"><div class="label">Policies</div><div class="value" style="color:var(--blue)" id="totalPolicies">—</div></div>
+  <div class="stat"><div class="label">Nodes</div><div class="value" style="color:var(--purple)" id="totalNodes">—</div></div>
+</div>
+
+<div class="row">
+  <div class="panel">
+    <h3>Protected Assets</h3>
+    <table><thead><tr><th>Status</th><th>Name</th><th>Kind</th><th>Host</th><th>Last Verified</th><th>Actions</th></tr></thead><tbody id="assetTable"></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>Security Alerts</h3>
+    <table><thead><tr><th>Severity</th><th>Asset</th><th>Message</th><th>Time</th><th></th></tr></thead><tbody id="alertTable"></tbody></table>
+  </div>
+</div>
+
+<div class="row">
+  <div class="panel">
+    <h3>Enforcement Policies</h3>
+    <table><thead><tr><th>Policy</th><th>Mode</th><th>Version</th><th>Controls</th></tr></thead><tbody id="policyTable"></tbody></table>
+  </div>
+  <div class="panel">
+    <h3>API Health</h3>
+    <div id="apiHealth" class="loading">Loading...</div>
+  </div>
+</div>
+
+<div class="footer">DFIM Central Management Dashboard · Phase 1 Productization · Benchmark-proven on production hardware</div>
+
+<script>
+const API = '';
+let allAssets = [];
+let allAlerts = [];
+let allPolicies = [];
+
+async function api(path, method='GET', body=null) {
+  const opts = { method, headers: {'Content-Type':'application/json'} };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  return r.json();
+}
+
+async function refreshAll() {
+  const timer = document.getElementById('timer');
+  timer.textContent = 'Loading...';
+  try {
+    const [fleet, assets, policies, alerts, health] = await Promise.all([
+      api('/v1/fleet/summary'), api('/v1/assets'),
+      api('/v1/policies'), api('/v1/alerts'), api('/health')
+    ]);
+
+    document.getElementById('totalAssets').textContent = fleet.total_assets;
+    document.getElementById('healthyAssets').textContent = fleet.healthy;
+    document.getElementById('tamperedAssets').textContent = fleet.tampered;
+    document.getElementById('activeAlerts').textContent = fleet.active_alerts;
+    document.getElementById('totalPolicies').textContent = fleet.total_policies;
+    document.getElementById('totalNodes').textContent = fleet.total_nodes;
+    document.getElementById('coveragePct').textContent = fleet.integrity_coverage_pct.toFixed(1) + '% coverage';
+
+    allAssets = assets; allAlerts = alerts; allPolicies = policies;
+    renderAssets();
+    renderAlerts();
+    renderPolicies();
+    document.getElementById('apiHealth').innerHTML =
+      '<div style="display:flex;gap:16px;flex-wrap:wrap">' +
+      '<div><span style="color:var(--muted)">Status:</span> <span style="color:var(--green)">' + health.status + '</span></div>' +
+      '<div><span style="color:var(--muted)">Uptime:</span> ' + Math.floor(health.uptime_seconds/3600) + 'h ' + Math.floor((health.uptime_seconds%3600)/60) + 'm</div>' +
+      '<div><span style="color:var(--muted)">Version:</span> ' + health.version + '</div></div>';
+
+    const hosts = [...new Set(assets.map(a => a.host_name))];
+    const hostSel = document.getElementById('hostFilter');
+    hostSel.innerHTML = '<option value="">All Hosts</option>' + hosts.map(h => '<option value="'+h+'">'+h+'</option>').join('');
+
+    timer.textContent = 'Auto-refresh: 5s';
+  } catch(e) {
+    timer.textContent = 'Error connecting';
+    document.getElementById('apiHealth').innerHTML = '<div class="error">API unreachable: check that dfim_management_api is running on port 3000</div>';
+  }
+}
+
+function renderAssets() {
+  const search = (document.getElementById('searchAsset').value || '').toLowerCase();
+  const statusF = document.getElementById('statusFilter').value;
+  const hostF = document.getElementById('hostFilter').value;
+
+  let filtered = allAssets;
+  if (search) filtered = filtered.filter(a => a.display_name.toLowerCase().includes(search) || a.asset_id.toLowerCase().includes(search));
+  if (statusF) filtered = filtered.filter(a => a.status === statusF);
+  if (hostF) filtered = filtered.filter(a => a.host_name === hostF);
+
+  document.getElementById('assetTable').innerHTML = filtered.map(a =>
+    '<tr>' +
+    '<td><span class="status ' + a.status + '"></span><span class="badge badge-' + a.status + '">' + a.status + '</span></td>' +
+    '<td>' + a.display_name + '</td><td>' + a.asset_kind + '</td><td>' + a.host_name + '</td>' +
+    '<td>' + new Date(a.last_verified).toLocaleTimeString() + '</td>' +
+    '<td><button class="btn btn-sm" onclick="verifyAsset(\'' + a.asset_id.replace(/'/g,"\\'") + '\')">Verify</button>' +
+    ' <button class="btn btn-sm btn-danger" onclick="deleteAsset(\'' + a.asset_id.replace(/'/g,"\\'") + '\')">×</button></td>' +
+    '</tr>'
+  ).join('') || '<tr><td colspan="6" style="color:var(--muted)">No assets found</td></tr>';
+}
+
+function renderAlerts() {
+  document.getElementById('alertTable').innerHTML = allAlerts.map(a =>
+    '<tr class="' + (a.acknowledged ? '' : 'alert-row') + '">' +
+    '<td>' + a.severity.toUpperCase() + '</td><td>' + a.asset_id.substring(0,16) + '…</td>' +
+    '<td>' + a.message + '</td><td>' + new Date(a.timestamp).toLocaleString() + '</td>' +
+    '<td>' + (a.acknowledged ? '<span style="color:var(--muted)">acknowledged</span>' : '<button class="btn btn-sm btn-outline" onclick="ackAlert(\''+a.alert_id+'\')">Acknowledge</button>') + '</td></tr>'
+  ).join('') || '<tr><td colspan="5" style="color:var(--muted)">No alerts</td></tr>';
+}
+
+function renderPolicies() {
+  document.getElementById('policyTable').innerHTML = allPolicies.map(p =>
+    '<tr><td>' + p.name + '</td><td>' + p.enforcement_mode + '</td>' +
+    '<td>v' + p.version + '</td><td>' + p.controls.join(', ') + '</td></tr>'
+  ).join('');
+}
+
+async function verifyAsset(id) {
+  const hash = prompt('Integrity hash (sha256:…) for ' + id + ':');
+  if (!hash) return;
+  await api('/v1/assets/' + id + '/verify', 'PUT', {integrity_hash: hash});
+  refreshAll();
+}
+
+async function deleteAsset(id) {
+  if (!confirm('Remove ' + id + '?')) return;
+  await api('/v1/assets/' + id, 'DELETE');
+  refreshAll();
+}
+
+async function ackAlert(id) {
+  await api('/v1/alerts/' + id + '/acknowledge', 'POST');
+  refreshAll();
+}
+
+async function enrollAsset() {
+  const id = prompt('Asset ID (e.g. sha256:xxx):');
+  if (!id) return;
+  const name = prompt('Display name:');
+  if (!name) return;
+  const kind = prompt('Kind (e.g. WebServer, Kernel, Daemon):') || 'Unknown';
+  const host = prompt('Host name:') || 'local';
+  const hash = prompt('Integrity hash (optional):');
+  await api('/v1/assets/enroll', 'POST', {asset_id:id, display_name:name, asset_kind:kind, host_name:host, integrity_hash:hash||null});
+  refreshAll();
+}
+
+function filterAssets() { renderAssets(); }
+
+refreshAll();
+setInterval(refreshAll, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+{
+  "title": "DFIM Operations",
+  "uid": "dfim-ops-v1",
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Verify events (1h)",
+      "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"dfim\"} |= \"verify_v1\" [1h]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Policy deny events (1h)",
+      "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"dfim\"} |= \"dfim.policy.deny\" [1h]))"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Recovery events (1h)",
+      "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+      "targets": [
+        {
+          "expr": "sum(count_over_time({job=\"dfim\"} |= \"recovery_v2\" [1h]))"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Provision + integrity failures",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        {
+          "expr": "sum by (event_type) (count_over_time({job=\"dfim\"} | json | event_type=~\"provision_v1|dfim.integrity.failure\" [5m]))"
+        }
+      ]
+    },
+    {
+      "type": "logs",
+      "title": "Fail-closed audit sink",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "targets": [
+        {
+          "expr": "{job=\"dfim\"} |= \"FAIL-CLOSED\""
+        }
+      ]
+    }
+  ]
+}

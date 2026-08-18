@@ -1,0 +1,33 @@
+# Build artifacts
+/target/
+/fuzz/target/
+**/target/
+
+# Python
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Boot/firmware binaries and sidecars
+*.efi
+*.dfim
+*.pdb
+*.dll
+*.exe
+*.lib
+*.exp
+bootmgfw.efi
+
+# License / runtime state
+.dfim_sys.dat
+
+# Logs
+debug-*.log
+
+# Editor / IDE
+/.cursor/
+/.vscode/
+
+# Misc generated
+/n/
+/Ooredoo_Production_Bundle/
