@@ -88,14 +88,16 @@ pub fn fips_module_init() -> DfimResult<FipsMode> {
 
     #[cfg(feature = "fips-hsm")]
     {
-        // Hardware/FOM mode — would call OpenSSL FIPS provider init
-        // For now: placeholder that succeeds in software mode
+        // NOTE: `fips-hsm` is a placeholder. No FIPS 140-3 validated module
+        // (OpenSSL FOM / HSM) is integrated yet, so this path must NOT claim
+        // `FipsValidated`. Reporting `SoftwareOnly` keeps the mode honest;
+        // claiming validation without an approved module would be misleading.
         if !run_power_on_self_tests_software() {
             FIPS_MODE.store(FIPS_MODE_FAILED, core::sync::atomic::Ordering::Release);
             return Err(DfimError::IntegrityFailure);
         }
-        FIPS_MODE.store(FIPS_MODE_FIPS_VALIDATED, core::sync::atomic::Ordering::Release);
-        Ok(FipsMode::FipsValidated)
+        FIPS_MODE.store(FIPS_MODE_SOFTWARE, core::sync::atomic::Ordering::Release);
+        Ok(FipsMode::SoftwareOnly)
     }
 }
 
@@ -184,21 +186,14 @@ fn run_power_on_self_tests_software() -> bool {
 
 /// SHA-256 digest — FIPS 140-3 compliant path.
 ///
-/// In FIPS-validated mode, delegates to OpenSSL FOM.
-/// In software mode, uses RustCrypto sha2.
+/// Until a validated module is integrated, every operating mode uses the
+/// software SHA-256 path; `FipsValidated` is retained as a forward-looking
+/// variant but is never reported by `fips_module_init`.
 #[cfg(feature = "full")]
 pub fn fips_sha256(data: &[u8]) -> [u8; SHA256_LEN] {
     match fips_mode() {
         FipsMode::SelfTestFailed => [0u8; SHA256_LEN], // Defensive zero
-        #[cfg(feature = "fips-hsm")]
-        FipsMode::FipsValidated => {
-            // Would call OpenSSL EVP_Digest with FIPS provider
-            // For now: identical to software path
-            crate::digest::sha256_digest(data)
-        }
-        FipsMode::SoftwareOnly => crate::digest::sha256_digest(data),
-        #[cfg(not(feature = "fips-hsm"))]
-        FipsMode::FipsValidated => crate::digest::sha256_digest(data),
+        FipsMode::SoftwareOnly | FipsMode::FipsValidated => crate::digest::sha256_digest(data),
     }
 }
 
@@ -207,7 +202,7 @@ pub fn fips_sha256(data: &[u8]) -> [u8; SHA256_LEN] {
 pub fn fips_hmac_sha256(key: &[u8], data: &[u8]) -> [u8; SHA256_LEN] {
     match fips_mode() {
         FipsMode::SelfTestFailed => [0u8; SHA256_LEN],
-        _ => {
+        FipsMode::SoftwareOnly | FipsMode::FipsValidated => {
             use hmac::{Hmac, Mac};
             use sha2::Sha256;
             type HmacSha256 = Hmac<Sha256>;

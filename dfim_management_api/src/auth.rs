@@ -3,33 +3,53 @@
 //! Supports:
 //!   - JWT token issuance with HMAC-SHA256
 //!   - Role-based access: admin, operator, readonly
-//!   - Token expiry: 24h default
-//!   - Tenant context extraction from claims
+//!   - Tenant context carried in the JWT claims (not client-controlled headers)
+//!   - Credentials supplied exclusively via environment (no hardcoded secrets)
 
 use serde::{Deserialize, Serialize};
 use hmac::{Hmac, Mac};
 use sha2::Sha256;
+use subtle::ConstantTimeEq;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 type HmacSha256 = Hmac<Sha256>;
 
 use std::env;
 
-fn get_jwt_secret() -> Vec<u8> {
-    env::var("DFIM_JWT_SECRET")
-        .unwrap_or_else(|_| {
-            tracing::warn!("DFIM_JWT_SECRET not set — using random key (not persistent!)");
-            use sha2::Digest;
-            format!("{:x}", sha2::Sha256::digest(b"dfim-fallback-random-seed"))
-        })
-        .into_bytes()
-}
-
-fn jwt_secret() -> Vec<u8> {
-    get_jwt_secret()
-}
+/// Minimum acceptable `DFIM_JWT_SECRET` length (bytes).
+const MIN_JWT_SECRET_LEN: usize = 32;
 
 const TOKEN_EXPIRY_SECS: u64 = 86400; // 24 hours
+
+/// Resolves the HMAC signing secret.
+///
+/// If `DFIM_JWT_SECRET` is set and long enough, it is used verbatim.
+/// Otherwise the API fails closed by generating a fresh, cryptographically
+/// random key that is stable for the lifetime of the process (tokens are
+/// invalidated on restart, but can never be forged from a public constant).
+fn jwt_secret() -> Vec<u8> {
+    if let Ok(secret) = env::var("DFIM_JWT_SECRET") {
+        let secret = secret.trim().to_string();
+        if secret.len() >= MIN_JWT_SECRET_LEN {
+            return secret.into_bytes();
+        }
+        tracing::warn!(
+            "DFIM_JWT_SECRET shorter than {MIN_JWT_SECRET_LEN} bytes — ignoring insecure value"
+        );
+    }
+
+    static FALLBACK: std::sync::OnceLock<Vec<u8>> = std::sync::OnceLock::new();
+    FALLBACK
+        .get_or_init(|| {
+            tracing::warn!(
+                "DFIM_JWT_SECRET not set — using an ephemeral random key (tokens invalid on restart)"
+            );
+            let mut key = [0u8; 32];
+            getrandom::getrandom(&mut key).expect("operating system CSPRNG unavailable");
+            key.to_vec()
+        })
+        .clone()
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
@@ -55,16 +75,68 @@ pub struct TokenResponse {
     pub tenant: String,
 }
 
-/// Simple user store (production: LDAP/OAuth2)
-fn validate_credentials(username: &str, password: &str) -> Option<(String, String)> {
-    match (username, password) {
-        ("admin", "REDACTED") => Some(("admin".into(), "default".into())),
-        ("operator", "dfim_ops_2026") => Some(("operator".into(), "default".into())),
-        ("readonly", "dfim_ro_2026") => Some(("readonly".into(), "default".into())),
-        ("acme_admin", "acme_pass") => Some(("admin".into(), "acme-corp".into())),
-        ("megabank_op", "bank_pass") => Some(("operator".into(), "megabank".into())),
-        _ => None,
+/// Role and tenant resolved for an authenticated user.
+#[derive(Debug, Clone)]
+pub struct UserIdentity {
+    pub role: String,
+    pub tenant: String,
+}
+
+/// Builds the account list from the environment. No credentials are compiled
+/// into the binary; if no accounts are configured, login is impossible.
+fn configured_accounts() -> Vec<(String, String, UserIdentity)> {
+    let mut accounts = Vec::new();
+
+    if let (Ok(user), Ok(pass)) = (env::var("DFIM_ADMIN_USER"), env::var("DFIM_ADMIN_PASSWORD")) {
+        if !user.is_empty() && !pass.is_empty() {
+            accounts.push((user, pass, UserIdentity {
+                role: "admin".into(),
+                tenant: tenant_from_env("DFIM_ADMIN_TENANT"),
+            }));
+        }
     }
+    if let (Ok(user), Ok(pass)) =
+        (env::var("DFIM_OPERATOR_USER"), env::var("DFIM_OPERATOR_PASSWORD"))
+    {
+        if !user.is_empty() && !pass.is_empty() {
+            accounts.push((user, pass, UserIdentity {
+                role: "operator".into(),
+                tenant: tenant_from_env("DFIM_OPERATOR_TENANT"),
+            }));
+        }
+    }
+    if let (Ok(user), Ok(pass)) =
+        (env::var("DFIM_READONLY_USER"), env::var("DFIM_READONLY_PASSWORD"))
+    {
+        if !user.is_empty() && !pass.is_empty() {
+            accounts.push((user, pass, UserIdentity {
+                role: "readonly".into(),
+                tenant: tenant_from_env("DFIM_READONLY_TENANT"),
+            }));
+        }
+    }
+
+    accounts
+}
+
+fn tenant_from_env(key: &str) -> String {
+    env::var(key).unwrap_or_else(|_| "default".into())
+}
+
+fn resolve_identity(
+    accounts: &[(String, String, UserIdentity)],
+    username: &str,
+    password: &str,
+) -> Option<UserIdentity> {
+    accounts
+        .iter()
+        .find(|(u, p, _)| u == username && p == password)
+        .map(|(_, _, identity)| identity.clone())
+}
+
+/// Validates credentials against the environment-configured account store.
+pub fn validate_credentials(username: &str, password: &str) -> Option<UserIdentity> {
+    resolve_identity(&configured_accounts(), username, password)
 }
 
 /// Issue a JWT token
@@ -90,7 +162,7 @@ pub fn issue_token(username: &str, role: &str, tenant: &str) -> Result<String, S
     Ok(format!("{}.{}.{}", header, payload, signature))
 }
 
-/// Verify a JWT token and return claims
+/// Verify a JWT token and return claims (constant-time signature check).
 pub fn verify_jwt(token: &str) -> Result<Claims, String> {
     let token = token.trim_start_matches("Bearer ");
     let parts: Vec<&str> = token.split('.').collect();
@@ -102,9 +174,12 @@ pub fn verify_jwt(token: &str) -> Result<Claims, String> {
 
     let mut mac = HmacSha256::new_from_slice(&jwt_secret()).map_err(|e| e.to_string())?;
     mac.update(signing_input.as_bytes());
-    let expected_sig = base64_encode(&mac.finalize().into_bytes());
+    let expected = mac.finalize().into_bytes();
+    let provided = base64_decode(parts[2])?;
 
-    if parts[2] != expected_sig {
+    if expected.len() != provided.len()
+        || !bool::from(expected.as_slice().ct_eq(provided.as_slice()))
+    {
         return Err("Invalid signature".into());
     }
 
@@ -120,17 +195,17 @@ pub fn verify_jwt(token: &str) -> Result<Claims, String> {
 
 /// Login handler
 pub fn login(req: &LoginRequest) -> Result<TokenResponse, String> {
-    let (role, tenant) = validate_credentials(&req.username, &req.password)
-        .ok_or_else(|| "Invalid credentials".to_string())?;
+    let identity =
+        validate_credentials(&req.username, &req.password).ok_or_else(|| "Invalid credentials".to_string())?;
 
-    let token = issue_token(&req.username, &role, &tenant)?;
+    let token = issue_token(&req.username, &identity.role, &identity.tenant)?;
 
     Ok(TokenResponse {
         access_token: token,
         token_type: "Bearer".into(),
         expires_in: TOKEN_EXPIRY_SECS,
-        role,
-        tenant,
+        role: identity.role,
+        tenant: identity.tenant,
     })
 }
 
@@ -139,21 +214,30 @@ fn base64_encode(data: &[u8]) -> String {
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(data)
 }
 
+fn base64_decode(b64: &str) -> Result<Vec<u8>, String> {
+    use base64::Engine;
+    base64::engine::general_purpose::URL_SAFE_NO_PAD
+        .decode(b64)
+        .map_err(|e| e.to_string())
+}
+
 fn base64_encode_json<T: Serialize>(value: &T) -> String {
     let json = serde_json::to_string(value).unwrap_or_default();
     base64_encode(json.as_bytes())
 }
 
 fn base64_decode_json<T: for<'a> Deserialize<'a>>(b64: &str) -> Result<T, String> {
-    use base64::Engine;
-    let bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD
-        .decode(b64).map_err(|e| e.to_string())?;
+    let bytes = base64_decode(b64)?;
     serde_json::from_slice(&bytes).map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn admin_identity() -> UserIdentity {
+        UserIdentity { role: "admin".into(), tenant: "default".into() }
+    }
 
     #[test]
     fn test_issue_and_verify_token() {
@@ -179,26 +263,31 @@ mod tests {
     }
 
     #[test]
-    fn test_login_valid_credentials() {
-        let resp = login(&LoginRequest { username: "admin".into(), password: "REDACTED".into() }).unwrap();
-        assert_eq!(resp.role, "admin");
-        assert_eq!(resp.token_type, "Bearer");
-        assert!(resp.access_token.len() > 50);
+    fn test_resolve_identity_matches_and_isolates() {
+        let accounts = vec![
+            ("acme_admin".to_string(), "acme_pass".to_string(), UserIdentity { role: "admin".into(), tenant: "acme-corp".into() }),
+            ("megabank_op".to_string(), "bank_pass".to_string(), UserIdentity { role: "operator".into(), tenant: "megabank".into() }),
+        ];
+        let a = resolve_identity(&accounts, "acme_admin", "acme_pass").unwrap();
+        assert_eq!(a.role, "admin");
+        assert_eq!(a.tenant, "acme-corp");
+        let b = resolve_identity(&accounts, "megabank_op", "bank_pass").unwrap();
+        assert_eq!(b.role, "operator");
+        assert_ne!(a.tenant, b.tenant);
     }
 
     #[test]
-    fn test_login_invalid_credentials() {
-        assert!(login(&LoginRequest { username: "admin".into(), password: "wrong".into() }).is_err());
+    fn test_resolve_identity_rejects_wrong_password() {
+        let accounts = vec![
+            ("admin".to_string(), "secret".to_string(), admin_identity()),
+        ];
+        assert!(resolve_identity(&accounts, "admin", "wrong").is_none());
     }
 
     #[test]
-    fn test_multi_tenant_isolation() {
-        let t1 = issue_token("acme_admin", "admin", "acme-corp").unwrap();
-        let t2 = issue_token("megabank_op", "operator", "megabank").unwrap();
-        let c1 = verify_jwt(&format!("Bearer {}", t1)).unwrap();
-        let c2 = verify_jwt(&format!("Bearer {}", t2)).unwrap();
-        assert_eq!(c1.tenant, "acme-corp");
-        assert_eq!(c2.tenant, "megabank");
-        assert_ne!(c1.tenant, c2.tenant);
+    fn test_login_requires_configured_account() {
+        // Without env-configured accounts, login must fail (fail closed).
+        let resp = login(&LoginRequest { username: "admin".into(), password: "REDACTED".into() });
+        assert!(resp.is_err());
     }
 }

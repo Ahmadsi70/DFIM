@@ -2,15 +2,16 @@
 
 use chrono::{DateTime, Utc};
 use sqlx::postgres::{PgPool, PgPoolOptions};
-use sqlx::Row;
 use std::env;
 
 pub type DbPool = PgPool;
 
-/// Connect to PostgreSQL with connection pooling
+/// Connect to PostgreSQL with connection pooling.
+///
+/// `DATABASE_URL` is required; no fallback credentials are embedded.
 pub async fn connect() -> Result<DbPool, sqlx::Error> {
     let db_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://dfim:REDACTED@localhost/dfim_production".into());
+        .map_err(|_| sqlx::Error::Configuration("DATABASE_URL environment variable is not set".into()))?;
 
     PgPoolOptions::new()
         .max_connections(50)
@@ -234,18 +235,41 @@ pub struct FleetSummaryRaw {
 }
 
 pub async fn fleet_summary(pool: &DbPool, tenant: &str) -> Result<FleetSummaryRaw, sqlx::Error> {
-    let total: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM assets WHERE tenant_id = $1").bind(tenant).fetch_one(pool).await?;
-    let healthy: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'healthy'").bind(tenant).fetch_one(pool).await?;
-    let tampered: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'tampered'").bind(tenant).fetch_one(pool).await?;
-    let blocked: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'blocked'").bind(tenant).fetch_one(pool).await?;
-    let pending: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'pending'").bind(tenant).fetch_one(pool).await?;
-    let nodes: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM nodes").fetch_one(pool).await?;
-    let policies: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM policies WHERE tenant_id = $1").bind(tenant).fetch_one(pool).await?;
-    let alerts: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM alerts WHERE tenant_id = $1 AND acknowledged = false").bind(tenant).fetch_one(pool).await?;
+    #[derive(sqlx::FromRow)]
+    struct SummaryRow {
+        total_assets: i64,
+        healthy: i64,
+        tampered: i64,
+        blocked: i64,
+        pending: i64,
+        total_nodes: i64,
+        total_policies: i64,
+        active_alerts: i64,
+    }
+
+    let row: SummaryRow = sqlx::query_as(
+        "SELECT
+            (SELECT COUNT(*) FROM assets WHERE tenant_id = $1)::bigint AS total_assets,
+            (SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'healthy')::bigint AS healthy,
+            (SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'tampered')::bigint AS tampered,
+            (SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'blocked')::bigint AS blocked,
+            (SELECT COUNT(*) FROM assets WHERE tenant_id = $1 AND status = 'pending')::bigint AS pending,
+            (SELECT COUNT(*) FROM nodes)::bigint AS total_nodes,
+            (SELECT COUNT(*) FROM policies WHERE tenant_id = $1)::bigint AS total_policies,
+            (SELECT COUNT(*) FROM alerts WHERE tenant_id = $1 AND acknowledged = false)::bigint AS active_alerts",
+    )
+    .bind(tenant)
+    .fetch_one(pool)
+    .await?;
 
     Ok(FleetSummaryRaw {
-        total_assets: total.0, healthy: healthy.0, tampered: tampered.0,
-        blocked: blocked.0, pending: pending.0,
-        total_nodes: nodes.0, total_policies: policies.0, active_alerts: alerts.0,
+        total_assets: row.total_assets,
+        healthy: row.healthy,
+        tampered: row.tampered,
+        blocked: row.blocked,
+        pending: row.pending,
+        total_nodes: row.total_nodes,
+        total_policies: row.total_policies,
+        active_alerts: row.active_alerts,
     })
 }

@@ -140,13 +140,17 @@ mod tests {
 
     #[test]
     #[cfg(target_os = "linux")]
-    fn direct_read_rejects_regular_file_without_o_direct_support() {
-        let (path, _payload) = temp_regular_file();
+    fn direct_read_on_regular_file_is_consistent() {
+        let (path, payload) = temp_regular_file();
         let result = read_block_device_direct(&path, DIRECT_IO_ALIGN);
         let _ = std::fs::remove_file(&path);
-        assert!(
-            result.is_err(),
-            "regular files typically reject O_DIRECT; got {result:?}"
-        );
+        match result {
+            // Filesystems without O_DIRECT support on regular files (e.g.
+            // ext4) reject the open and must surface a clean error.
+            Err(_) => {}
+            // Filesystems that do support O_DIRECT on regular files (e.g.
+            // overlayfs, tmpfs) must return the exact bytes written.
+            Ok(read) => assert_eq!(read.as_slice(), &payload[..DIRECT_IO_ALIGN]),
+        }
     }
 }
