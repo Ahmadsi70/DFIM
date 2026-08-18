@@ -1,0 +1,2 @@
+{"schema_version":1,"event_type":"verify_v1","severity":"error","outcome":"failure","timestamp_unix_ms":1783864206989,"asset_id":"sha256:d45d6ec9da788d800899b3872132807c3d19d0858e35453f7a891da84456e40a"}
+{"schema_version":1,"event_type":"verify_v1","severity":"info","outcome":"success","timestamp_unix_ms":1783864207199,"asset_id":"sha256:d45d6ec9da788d800899b3872132807c3d19d0858e35453f7a891da84456e40a","merkle_root":"080b780c377c49b6dbdb4988becb729df294365a81873727f1512cccf73c4fc9"}

@@ -1,0 +1,457 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "serialNumber": "urn:uuid:c2e79978-374b-4a09-8447-0865efc6d087",
+  "metadata": {
+    "timestamp": "2026-06-29T19:37:26.369675160Z",
+    "tools": [
+      {
+        "vendor": "CycloneDX",
+        "name": "cargo-cyclonedx",
+        "version": "0.5.9"
+      }
+    ],
+    "authors": [
+      {
+        "name": "DFIM Engineering"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_linux_kernel/dfim-ebpf-user#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim-ebpf-user",
+      "version": "0.1.0",
+      "description": "DFIM eBPF user-space loader and manifest provisioner",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim-ebpf-user@0.1.0?download_url=file://.",
+      "components": [
+        {
+          "type": "application",
+          "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_linux_kernel/dfim-ebpf-user#0.1.0 bin-target-0",
+          "name": "dfim-ebpf-user",
+          "version": "0.1.0",
+          "purl": "pkg:cargo/dfim-ebpf-user@0.1.0?download_url=file://.#src/main.rs"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "cdx:rustc:sbom:target:triple",
+        "value": "x86_64-unknown-linux-gnu"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_core_engine",
+      "version": "0.1.0",
+      "description": "Deterministic Firmware Integrity Matrix — Layer-0 core mathematics, FEC, and cryptographic integrity",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_core_engine@0.1.0?download_url=file://../../dfim_core_engine"
+    },
+    {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_host_init",
+      "version": "0.1.0",
+      "description": "DFIM host binary initialization — dynamic evaluation license enforcement",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_host_init@0.1.0?download_url=file://../../dfim_host_init"
+    },
+    {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_windows_uefi#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_windows_uefi",
+      "version": "0.1.0",
+      "description": "DFIM Windows UEFI Ring-1 boot guard — intercepts bootmgfw.efi before NT kernel init",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_windows_uefi@0.1.0?download_url=file://../../dfim_windows_uefi"
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#anyhow@1.0.103",
+      "author": "David Tolnay <dtolnay@gmail.com>",
+      "name": "anyhow",
+      "version": "1.0.103",
+      "description": "Flexible concrete Error type built on std::error::Error",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "2a4385e2e34eb35d6b3efe798b9eb88096925d87726c0798709bf56d9ed84af3"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/anyhow@1.0.103",
+      "externalReferences": [
+        {
+          "type": "documentation",
+          "url": "https://docs.rs/anyhow"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/dtolnay/anyhow"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#aya-log@0.2.1",
+      "author": "Aya Contributors",
+      "name": "aya-log",
+      "version": "0.2.1",
+      "description": "A logging library for eBPF programs.",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "b600d806c1d07d3b81ab5f4a2a95fd80f479a0d3f1d68f29064d660865f85f02"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/aya-log@0.2.1",
+      "externalReferences": [
+        {
+          "type": "documentation",
+          "url": "https://docs.rs/aya-log"
+        },
+        {
+          "type": "website",
+          "url": "https://aya-rs.dev"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/aya-rs/aya"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#aya@0.13.1",
+      "author": "Aya Contributors",
+      "name": "aya",
+      "version": "0.13.1",
+      "description": "An eBPF library with a focus on developer experience and operability.",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d18bc4e506fbb85ab7392ed993a7db4d1a452c71b75a246af4a80ab8c9d2dd50"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/aya@0.13.1",
+      "externalReferences": [
+        {
+          "type": "documentation",
+          "url": "https://docs.rs/aya"
+        },
+        {
+          "type": "website",
+          "url": "https://aya-rs.dev"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/aya-rs/aya"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#cargo_metadata@0.23.1",
+      "author": "Oliver Schneider <git-spam-no-reply9815368754983@oli-obk.de>",
+      "name": "cargo_metadata",
+      "version": "0.23.1",
+      "description": "structured access to the output of `cargo metadata`",
+      "scope": "excluded",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "ef987d17b0a113becdd19d3d0022d04d7ef41f9efe4f3fb63ac44ba61df3ade9"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "purl": "pkg:cargo/cargo_metadata@0.23.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/oli-obk/cargo_metadata"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#clap@4.6.1",
+      "name": "clap",
+      "version": "4.6.1",
+      "description": "A simple to use, efficient, and full-featured Command Line Argument Parser",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1ddb117e43bbf7dacf0a4190fef4d345b9bad68dfc649cb349e7d17d28428e51"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/clap@4.6.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/clap-rs/clap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#ctrlc@3.5.2",
+      "author": "Antti Keränen <detegr@gmail.com>",
+      "name": "ctrlc",
+      "version": "3.5.2",
+      "description": "Easy Ctrl-C handler for Rust projects",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "e0b1fab2ae45819af2d0731d60f2afe17227ebb1a1538a236da84c93e9a60162"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/ctrlc@3.5.2",
+      "externalReferences": [
+        {
+          "type": "documentation",
+          "url": "https://detegr.github.io/doc/ctrlc"
+        },
+        {
+          "type": "website",
+          "url": "https://github.com/Detegr/rust-ctrlc"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/Detegr/rust-ctrlc.git"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#env_logger@0.11.11",
+      "name": "env_logger",
+      "version": "0.11.11",
+      "description": "A logging implementation for `log` which is configured via an environment variable. ",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "de671bd27a75a797dc9ae289ba1e77276e75e2026408aab65185384e2d5cd3f6"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/env_logger@0.11.11",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-cli/env_logger"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.186",
+      "author": "The Rust Project Developers",
+      "name": "libc",
+      "version": "0.2.186",
+      "description": "Raw FFI bindings to platform libraries like libc.",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "68ab91017fe16c622486840e4c83c9a37afeff978bd239b5293d61ece587de66"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/libc@0.2.186",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/libc"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#log@0.4.33",
+      "author": "The Rust Project Developers",
+      "name": "log",
+      "version": "0.4.33",
+      "description": "A lightweight logging facade for Rust ",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/log@0.4.33",
+      "externalReferences": [
+        {
+          "type": "documentation",
+          "url": "https://docs.rs/log"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/rust-lang/log"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#nix@0.29.0",
+      "author": "The nix-rust Project Developers",
+      "name": "nix",
+      "version": "0.29.0",
+      "description": "Rust friendly bindings to *nix APIs",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "71e2746dc3a24dd78b3cfcb7be93368c6de9963d30f43a6a73998a9cf4b17b46"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "purl": "pkg:cargo/nix@0.29.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/nix-rust/nix"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0"
+    },
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0"
+    },
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_linux_kernel/dfim-ebpf-user#0.1.0",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#anyhow@1.0.103",
+        "registry+https://github.com/rust-lang/crates.io-index#aya@0.13.1",
+        "registry+https://github.com/rust-lang/crates.io-index#aya-log@0.2.1",
+        "registry+https://github.com/rust-lang/crates.io-index#cargo_metadata@0.23.1",
+        "registry+https://github.com/rust-lang/crates.io-index#clap@4.6.1",
+        "registry+https://github.com/rust-lang/crates.io-index#ctrlc@3.5.2",
+        "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0",
+        "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0",
+        "path+file:///mnt/c/Users/badri/DFIM/dfim_windows_uefi#0.1.0",
+        "registry+https://github.com/rust-lang/crates.io-index#env_logger@0.11.11",
+        "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.186",
+        "registry+https://github.com/rust-lang/crates.io-index#log@0.4.33",
+        "registry+https://github.com/rust-lang/crates.io-index#nix@0.29.0"
+      ]
+    },
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_windows_uefi#0.1.0"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#anyhow@1.0.103"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#aya-log@0.2.1"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#aya@0.13.1"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#cargo_metadata@0.23.1"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#clap@4.6.1"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#ctrlc@3.5.2"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#env_logger@0.11.11"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.186"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#log@0.4.33"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#nix@0.29.0"
+    }
+  ]
+}

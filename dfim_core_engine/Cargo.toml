@@ -1,0 +1,33 @@
+[package]
+name = "dfim_core_engine"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Deterministic Firmware Integrity Matrix — Layer-0 core mathematics, FEC, and cryptographic integrity"
+build = "build.rs"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }
+
+[dependencies]
+digest = { version = "0.10", default-features = false, optional = true }
+sha2 = { version = "0.10", default-features = false, optional = true, features = ["oid"] }
+hmac = { version = "0.12", default-features = false }
+pbkdf2 = { version = "0.12", default-features = false }
+hkdf = { version = "0.12", default-features = false }
+libm = { version = "0.2", default-features = false, optional = true }
+litcrypt2_nostd = { workspace = true, optional = true }
+subtle = { version = "2.6", default-features = false }
+aya = { version = "0.13.1", optional = true, default-features = false }
+
+[features]
+default = ["alloc", "full", "hardening"]
+alloc = []
+full = ["alloc", "libm", "dep:digest", "dep:sha2"]
+bpf = []
+hardening = ["litcrypt2_nostd"]
+fips-hsm = []
+linux-loader = ["dep:aya"]
+
+[dev-dependencies]

@@ -1,0 +1,140 @@
+name: DFIM Attested Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  SOURCE_DATE_EPOCH: "946684800"
+  DFIM_CRYPTO_KEY: ${{ secrets.DFIM_CRYPTO_KEY }}
+
+jobs:
+  linux-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Require release key
+        shell: bash
+        run: |
+          test -n "${DFIM_CRYPTO_KEY}"
+          test "${#DFIM_CRYPTO_KEY}" -ge 16
+
+      - name: Build locked release binary
+        run: cargo build --locked --release -p dfim_cli_provisioner --features production
+
+      - name: Install pinned CycloneDX generator
+        run: cargo install cargo-cyclonedx --version 0.5.9 --locked
+
+      - name: Generate reproducible SBOM
+        run: cargo cyclonedx --format json --spec-version 1.5 --override-filename bom
+
+      - name: Assemble deterministic release bundle
+        shell: bash
+        run: |
+          mkdir -p dist
+          install -m 0755 target/release/dfim-provisioner dist/dfim-provisioner
+          install -m 0644 dfim_cli_provisioner/bom.json dist/dfim.cdx.json
+          install -m 0644 LICENSE dist/LICENSE
+          (
+            cd dist
+            sha256sum dfim-provisioner dfim.cdx.json LICENSE > RELEASE_SHA256SUMS
+          )
+          tar \
+            --sort=name \
+            --mtime="@${SOURCE_DATE_EPOCH}" \
+            --owner=0 --group=0 --numeric-owner \
+            -czf dfim-linux-x86_64.tar.gz \
+            -C dist \
+            LICENSE RELEASE_SHA256SUMS dfim-provisioner dfim.cdx.json
+
+      - name: Attest build provenance
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: dfim-linux-x86_64.tar.gz
+
+      - name: Attest CycloneDX SBOM
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: dfim-linux-x86_64.tar.gz
+          sbom-path: dist/dfim.cdx.json
+
+      - name: Upload attested release bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dfim-linux-x86_64
+          path: |
+            dfim-linux-x86_64.tar.gz
+            dist/RELEASE_SHA256SUMS
+            dist/dfim.cdx.json
+          if-no-files-found: error
+
+  windows-release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Require release key
+        shell: pwsh
+        run: |
+          if (-not $env:DFIM_CRYPTO_KEY) { throw "DFIM_CRYPTO_KEY is required" }
+          if ($env:DFIM_CRYPTO_KEY.Length -lt 16) { throw "DFIM_CRYPTO_KEY must be at least 16 bytes" }
+
+      - name: Package Windows release bundle
+        shell: pwsh
+        run: |
+          ./package_windows_release.ps1 -DistDir dist-windows -ArchiveName dfim-windows-x86_64.zip
+
+      - name: Attest Windows release bundle
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: dfim-windows-x86_64.zip
+
+      - name: Upload attested Windows bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dfim-windows-x86_64
+          path: |
+            dfim-windows-x86_64.zip
+            dist-windows/RELEASE_SHA256SUMS
+          if-no-files-found: error
+
+  uefi-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Require release key
+        shell: bash
+        run: |
+          test -n "${DFIM_CRYPTO_KEY}"
+          test "${#DFIM_CRYPTO_KEY}" -ge 16
+
+      - name: Package UEFI release bundle
+        shell: bash
+        run: bash package_uefi_release.sh
+
+      - name: Attest UEFI release bundle
+        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        with:
+          subject-path: dfim-uefi-x86_64.tar.gz
+
+      - name: Upload attested UEFI bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dfim-uefi-x86_64
+          path: |
+            dfim-uefi-x86_64.tar.gz
+            dist-uefi/RELEASE_SHA256SUMS
+          if-no-files-found: error

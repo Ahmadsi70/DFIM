@@ -1,0 +1,17 @@
+[package]
+name = "dfim_kani_proofs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Kani formal verification harness for DFIM Layer-0 parsers and integrity gates"
+publish = false
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }
+
+[dependencies]
+dfim_core_engine = { version = "0.1.0", path = "../dfim_core_engine", default-features = false, features = ["alloc", "full"] }
+
+[package.metadata.kani.flags]
+default-unwind = "1024"

@@ -1,0 +1,114 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "serialNumber": "urn:uuid:0f0b4003-56a0-40e1-9b64-840ac8c38c8a",
+  "metadata": {
+    "timestamp": "2026-06-29T19:37:26.364393150Z",
+    "tools": [
+      {
+        "vendor": "CycloneDX",
+        "name": "cargo-cyclonedx",
+        "version": "0.5.9"
+      }
+    ],
+    "authors": [
+      {
+        "name": "DFIM Engineering"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_linux_kernel/dfim-ebpf#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim-ebpf",
+      "version": "0.1.0",
+      "description": "DFIM eBPF LSM kernel probe — Merkle + Hamming integrity enforcement",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim-ebpf@0.1.0?download_url=file://.",
+      "components": [
+        {
+          "type": "application",
+          "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_linux_kernel/dfim-ebpf#0.1.0 bin-target-0",
+          "name": "dfim-ebpf",
+          "version": "0.1.0",
+          "purl": "pkg:cargo/dfim-ebpf@0.1.0?download_url=file://.#src/main.rs"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "cdx:rustc:sbom:target:triple",
+        "value": "x86_64-unknown-linux-gnu"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_core_engine",
+      "version": "0.1.0",
+      "description": "Deterministic Firmware Integrity Matrix — Layer-0 core mathematics, FEC, and cryptographic integrity",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_core_engine@0.1.0?download_url=file://../../dfim_core_engine"
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#aya-ebpf@0.1.1",
+      "author": "Aya Contributors",
+      "name": "aya-ebpf",
+      "version": "0.1.1",
+      "description": "A library for writing eBPF programs",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "d8dbaf5409a1a0982e5c9bdc0f499a55fe5ead39fe9c846012053faf0d404f73"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/aya-ebpf@0.1.1",
+      "externalReferences": [
+        {
+          "type": "website",
+          "url": "https://aya-rs.dev"
+        },
+        {
+          "type": "vcs",
+          "url": "https://github.com/aya-rs/aya"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0"
+    },
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_linux_kernel/dfim-ebpf#0.1.0",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#aya-ebpf@0.1.1",
+        "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0"
+      ]
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#aya-ebpf@0.1.1"
+    }
+  ]
+}

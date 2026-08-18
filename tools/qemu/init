@@ -1,0 +1,18 @@
+#!/bin/busybox sh
+/bin/busybox mkdir -p /proc /sys /dev /host_share
+/bin/busybox mount -t proc proc /proc
+/bin/busybox mount -t sysfs sys /sys
+/bin/busybox mount -t devtmpfs devtmpfs /dev
+/bin/busybox mdev -s
+
+# ?? ?????: ??????? ???? ??????? ????? ?? ??? ???? ???? Out of Memory
+echo 1 > /proc/sys/vm/overcommit_memory
+
+/bin/busybox sleep 2
+
+if [ -f /tools/qemu/guest_dfim_runner.sh ]; then
+    /bin/busybox sh /tools/qemu/guest_dfim_runner.sh
+else
+    /bin/busybox sh /guest_dfim_runner.sh
+fi
+/bin/busybox poweroff -f
