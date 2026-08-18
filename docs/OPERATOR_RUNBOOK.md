@@ -12,10 +12,10 @@ DFIM_API_BIND=0.0.0.0:3000 \
 # Health check
 curl http://localhost:3000/health
 
-# Login
+# Login (credentials come from the API's environment)
 curl -X POST http://localhost:3000/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"REDACTED"}'
+  -d "{\"username\":\"$DFIM_ADMIN_USER\",\"password\":\"$DFIM_ADMIN_PASSWORD\"}"
 ```
 
 ## Daily Operations
@@ -31,7 +31,7 @@ curl -X POST http://localhost:3000/v1/auth/login \
 
 ## Monitoring
 
-- **Grafana:** http://localhost:3001 (admin/dfim_grafana_2026)
+- **Grafana:** http://localhost:3001 (admin/$GF_SECURITY_ADMIN_PASSWORD)
 - **Prometheus:** http://localhost:9090
 - **API logs:** /var/log/dfim/dfim-api.log
 - **Audit trail:** /var/log/dfim/audit.jsonl
