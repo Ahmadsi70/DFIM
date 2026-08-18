@@ -221,8 +221,8 @@ pub async fn insert_alert(pool: &DbPool, a: &super::AlertRecord) -> Result<(), s
 pub async fn acknowledge_alert(pool: &DbPool, tenant: &str, id: &str) -> Result<super::AlertRecord, sqlx::Error> {
     sqlx::query("UPDATE alerts SET acknowledged = true WHERE alert_id = $1 AND tenant_id = $2")
         .bind(id).bind(tenant).execute(pool).await?;
-    sqlx::query_as("SELECT alert_id, severity, asset_id, message, timestamp, acknowledged, tenant_id FROM alerts WHERE alert_id = $1")
-        .bind(id).fetch_one(pool).await
+    sqlx::query_as("SELECT alert_id, severity, asset_id, message, timestamp, acknowledged, tenant_id FROM alerts WHERE alert_id = $1 AND tenant_id = $2")
+        .bind(id).bind(tenant).fetch_one(pool).await
 }
 
 // ── Fleet Summary ──
