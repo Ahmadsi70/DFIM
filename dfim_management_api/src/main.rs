@@ -16,7 +16,7 @@ mod metrics;
 mod audit;
 
 use axum::{
-    Json, Router, extract::{Path, Query, State, ConnectInfo},
+    Json, Router, extract::{Path, Query, State, ConnectInfo, Extension},
     http::{Method, StatusCode, header},
     middleware,
     response::IntoResponse,
@@ -53,9 +53,17 @@ impl AppState {
         db::migrate(&db).await.expect("Database migration failed");
         let logger = audit::AuditLogger::new(std::path::Path::new("/var/log/dfim/audit.jsonl"))
             .unwrap_or_else(|_| audit::AuditLogger::to_stdout());
+        let rate_limit = std::env::var("DFIM_RATE_LIMIT")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(1000);
+        let rate_burst = std::env::var("DFIM_RATE_BURST")
+            .ok()
+            .and_then(|v| v.parse::<u32>().ok())
+            .unwrap_or(10000);
         Self {
             db,
-            rate_limiter: Arc::new(ratelimit::RateLimiter::new(1000, 10000)),
+            rate_limiter: Arc::new(ratelimit::RateLimiter::new(rate_limit, rate_burst)),
             audit_logger: Arc::new(logger),
             start_time: Utc::now(),
         }
@@ -138,11 +146,24 @@ fn sanitize(input: &str) -> String {
          .replace('"', "&quot;").replace('\'', "&#x27;")
 }
 
-fn extract_tenant(headers: &header::HeaderMap) -> String {
-    headers.get("X-Tenant-ID")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("default")
-        .to_string()
+/// Role-based authorization. Returns true when `role` is allowed to perform
+/// `method` against `path`.
+fn authorize(role: &str, method: &Method, path: &str) -> bool {
+    match role {
+        "admin" => true,
+        "operator" => {
+            // Operators may not delete assets nor create policies.
+            if method == Method::DELETE {
+                return false;
+            }
+            if path == "/v1/policies" && method == Method::POST {
+                return false;
+            }
+            true
+        }
+        "readonly" => method == Method::GET,
+        _ => false,
+    }
 }
 
 /// Rate limit + auth middleware chain
@@ -150,7 +171,7 @@ async fn guard_middleware(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     headers: header::HeaderMap,
     State(state): State<AppState>,
-    request: axum::extract::Request,
+    mut request: axum::extract::Request,
     next: axum::middleware::Next,
 ) -> axum::response::Response {
     let path = request.uri().path().to_string();
@@ -179,7 +200,11 @@ async fn guard_middleware(
 
         match auth::verify_jwt(auth_header) {
             Ok(claims) => {
-                let _ = claims;
+                if !authorize(&claims.role, request.method(), &path) {
+                    return (StatusCode::FORBIDDEN,
+                            Json(ErrorResponse { error: "Insufficient role".into(), code: 403 })).into_response();
+                }
+                request.extensions_mut().insert(claims);
             }
             Err(_) => {
                 return (StatusCode::UNAUTHORIZED,
@@ -210,8 +235,8 @@ async fn health_check(State(state): State<AppState>) -> Json<HealthResponse> {
     })
 }
 
-async fn fleet_summary(State(state): State<AppState>, headers: header::HeaderMap) -> Json<FleetSummary> {
-    let tenant = extract_tenant(&headers);
+async fn fleet_summary(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>) -> Json<FleetSummary> {
+    let tenant = claims.tenant;
     let summary = db::fleet_summary(&state.db, &tenant).await.unwrap_or_default();
     let total = summary.total_assets as f64;
     Json(FleetSummary {
@@ -223,9 +248,9 @@ async fn fleet_summary(State(state): State<AppState>, headers: header::HeaderMap
     })
 }
 
-async fn list_assets(State(state): State<AppState>, headers: header::HeaderMap,
+async fn list_assets(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
                      Query(p): Query<PaginationParams>) -> Json<Vec<AssetRecord>> {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant;
     let limit = p.limit.unwrap_or(100).min(1000); // hard cap at 1000 per page
     let offset = p.offset.unwrap_or(0);
     let assets = db::list_assets(&state.db, &tenant, limit, offset, p.status.as_deref(),
@@ -233,20 +258,20 @@ async fn list_assets(State(state): State<AppState>, headers: header::HeaderMap,
     Json(assets)
 }
 
-async fn get_asset(State(state): State<AppState>, headers: header::HeaderMap, Path(id): Path<String>)
+async fn get_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>, Path(id): Path<String>)
     -> Result<Json<AssetRecord>, (StatusCode, Json<ErrorResponse>)>
 {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant;
     db::get_asset(&state.db, &tenant, &id).await
         .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "Asset not found"))
         .map(Json)
 }
 
-async fn enroll_asset(State(state): State<AppState>, headers: header::HeaderMap,
+async fn enroll_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
                       Json(req): Json<EnrollAssetRequest>)
     -> Result<(StatusCode, Json<AssetRecord>), (StatusCode, Json<ErrorResponse>)>
 {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant.clone();
     let record = AssetRecord {
         asset_id: sanitize(&req.asset_id), display_name: sanitize(&req.display_name),
         asset_kind: sanitize(&req.asset_kind), host_name: sanitize(&req.host_name),
@@ -260,51 +285,54 @@ async fn enroll_asset(State(state): State<AppState>, headers: header::HeaderMap,
     Ok((StatusCode::CREATED, Json(record)))
 }
 
-async fn verify_asset(State(state): State<AppState>, headers: header::HeaderMap,
+async fn verify_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
                       Path(id): Path<String>, Json(body): Json<HashMap<String, String>>)
     -> Result<Json<AssetRecord>, (StatusCode, Json<ErrorResponse>)>
 {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant.clone();
     let mut asset = db::get_asset(&state.db, &tenant, &id).await
         .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "Asset not found"))?;
 
+    let provided_hash = body
+        .get("integrity_hash")
+        .filter(|h| !h.is_empty())
+        .ok_or_else(|| api_error(StatusCode::BAD_REQUEST, "integrity_hash is required"))?;
+
     asset.last_verified = Utc::now();
-    asset.status = match body.get("integrity_hash") {
-        Some(h) if asset.integrity_hash.as_deref() == Some(h) => "healthy".into(),
-        Some(_) => {
-            let alert = AlertRecord {
-                alert_id: Uuid::new_v4().to_string(), severity: "critical".into(),
-                asset_id: id.clone(), message: format!("Integrity failure: {}", asset.display_name),
-                timestamp: Utc::now(), acknowledged: false, tenant_id: tenant.clone(),
-            };
-            let _ = db::insert_alert(&state.db, &alert).await;
-            "tampered".into()
-        }
-        None => "healthy".into(),
+    asset.status = if asset.integrity_hash.as_deref() == Some(provided_hash.as_str()) {
+        "healthy".into()
+    } else {
+        let alert = AlertRecord {
+            alert_id: Uuid::new_v4().to_string(), severity: "critical".into(),
+            asset_id: id.clone(), message: format!("Integrity failure: {}", asset.display_name),
+            timestamp: Utc::now(), acknowledged: false, tenant_id: tenant.clone(),
+        };
+        let _ = db::insert_alert(&state.db, &alert).await;
+        "tampered".into()
     };
     db::update_asset_status(&state.db, &tenant, &id, &asset.status, asset.last_verified).await
         .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "Update failed"))?;
     Ok(Json(asset))
 }
 
-async fn delete_asset(State(state): State<AppState>, headers: header::HeaderMap, Path(id): Path<String>)
+async fn delete_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>, Path(id): Path<String>)
     -> Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)>
 {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant;
     db::delete_asset(&state.db, &tenant, &id).await
         .map_err(|_| api_error(StatusCode::NOT_FOUND, "Asset not found"))?;
     Ok(Json(serde_json::json!({"deleted": id})))
 }
 
-async fn list_policies(State(state): State<AppState>, headers: header::HeaderMap) -> Json<Vec<PolicyRecord>> {
-    let tenant = extract_tenant(&headers);
+async fn list_policies(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>) -> Json<Vec<PolicyRecord>> {
+    let tenant = claims.tenant;
     let policies = db::list_policies(&state.db, &tenant).await.unwrap_or_default();
     Json(policies)
 }
 
-async fn create_policy(State(state): State<AppState>, headers: header::HeaderMap,
+async fn create_policy(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
                        Json(body): Json<HashMap<String, String>>) -> Result<(StatusCode, Json<PolicyRecord>), (StatusCode, Json<ErrorResponse>)> {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant;
     let pid = body.get("policy_id").cloned().unwrap_or_else(|| Uuid::new_v4().to_string());
     let policy = PolicyRecord {
         policy_id: pid.clone(), name: body.get("name").cloned().unwrap_or_else(|| "Unnamed".into()),
@@ -334,17 +362,17 @@ async fn register_node(State(state): State<AppState>, Json(body): Json<HashMap<S
     Ok((StatusCode::CREATED, Json(node)))
 }
 
-async fn list_alerts(State(state): State<AppState>, headers: header::HeaderMap,
+async fn list_alerts(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
                      Query(p): Query<PaginationParams>) -> Json<Vec<AlertRecord>> {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant;
     let limit = p.limit.unwrap_or(100);
     let alerts = db::list_alerts(&state.db, &tenant, limit).await.unwrap_or_default();
     Json(alerts)
 }
 
-async fn acknowledge_alert(State(state): State<AppState>, headers: header::HeaderMap,
+async fn acknowledge_alert(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
                            Path(id): Path<String>) -> Result<Json<AlertRecord>, (StatusCode, Json<ErrorResponse>)> {
-    let tenant = extract_tenant(&headers);
+    let tenant = claims.tenant;
     db::acknowledge_alert(&state.db, &tenant, &id).await
         .map_err(|_| api_error(StatusCode::NOT_FOUND, "Alert not found"))
         .map(Json)

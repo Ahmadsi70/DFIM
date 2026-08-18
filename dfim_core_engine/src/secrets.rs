@@ -27,7 +27,7 @@ pub fn protocol_id() -> &'static str {
     "dfim_integrity_protocol_v1"
 }
 
-/// Default salt label bytes for PBKDF2 derivation.
+/// Default salt label bytes for key derivation.
 pub fn default_salt_label() -> &'static [u8] {
     #[cfg(all(feature = "hardening", feature = "alloc"))]
     {

@@ -92,10 +92,9 @@ pub use state_db::{
 #[cfg(feature = "full")]
 pub use kdf::{
     authenticate_manifest, authentication_tag, canonical_manifest_bytes, derive_authentication_key,
-    derive_salt, hkdf_sha256_expand, nonlinear_seed_expansion, AuthKey, AuthTag, CoefficientSeed,
+    derive_salt, hkdf_sha256_expand, AuthKey, AuthSeed, AuthTag,
 };
 #[cfg(feature = "full")]
 pub use phasor::{
-    build_identity_hash, build_identity_hex, canonical_phasor_lines, phasor_aggregate,
-    PhasorAggregate, PhasorTerm,
+    build_identity_hash, build_identity_hex, PhasorTerm,
 };

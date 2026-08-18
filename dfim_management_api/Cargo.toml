@@ -22,3 +22,5 @@ parking_lot = "0.12"
 sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "chrono"] }
 hmac = "0.12"
 base64 = "0.22"
+subtle = "2"
+getrandom = "0.2"

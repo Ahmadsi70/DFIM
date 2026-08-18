@@ -1,93 +1,54 @@
-//! PBKDF2-HMAC-SHA256 key derivation and HMAC authentication chain.
+//! Key derivation and HMAC authentication for enrolled-manifest commitments.
 //!
-//! Implements:
-//! - `acc_0 = SHA256(concat_le64(coefficients))`
-//! - `t = le64(c) || le64(i) || acc; acc = SHA256(t || SHA384(t)[:16])`
-//! - `I = max(1000, 1000 + floor(crystal_index * 10000))`
-//! - `S = SHA256(salt_label || le64(crystal_index))`
-//! - `K = PBKDF2-HMAC-SHA256(P, S, I, 32)`
-//! - `Tag = HMAC-SHA256(K, manifest_bytes)`
+//! Standard, audited primitives only:
+//! - `S = SHA256(salt_label || seed)` — deterministic domain-separated salt
+//! - `K = HKDF-SHA256(IKM=seed, salt=S, info=context)` — key derivation
+//! - `Tag = HMAC-SHA256(K, manifest_bytes)` — authentication tag
 
-use crate::constants::{default_salt_label_const, pbkdf2_iterations, protocol_id_const, DK_LEN};
+use crate::constants::{default_salt_label_const, protocol_id_const, DK_LEN, SHA256_LEN};
 use crate::digest::sha256_digest;
 use crate::error::{DfimError, DfimResult};
-use digest::Digest;
 use hmac::{Hmac, Mac};
-use pbkdf2::pbkdf2;
-use sha2::{Sha256, Sha384};
+use sha2::Sha256;
 
 type HmacSha256 = Hmac<Sha256>;
 
-/// Eight SU(3) coefficient seeds for nonlinear expansion.
-pub type CoefficientSeed = [f64; 8];
+/// Uniform-random authentication seed (32 bytes).
+pub type AuthSeed = [u8; DK_LEN];
 
-/// Derived authentication key material.
+/// Derived authentication key material (32 bytes).
 pub type AuthKey = [u8; DK_LEN];
 
-/// HMAC-SHA256 authentication tag.
+/// HMAC-SHA256 authentication tag (32 bytes).
 pub type AuthTag = [u8; DK_LEN];
 
-/// Nonlinear seed expansion: eight coefficients → 32-byte password `P`.
-///
-/// /// [DFIM_AUDIT_LMT] Proof: [L=O(1), M=O(1), T=O(1)]
-pub fn nonlinear_seed_expansion(coeffs: &CoefficientSeed) -> AuthKey {
-    let mut acc = sha256_concat_f64(coeffs);
-    for (i, c) in coeffs.iter().enumerate() {
-        let mut t = [0u8; 8 + 8 + DK_LEN];
-        t[..8].copy_from_slice(&c.to_le_bytes());
-        t[8..16].copy_from_slice(&(i as u64).to_le_bytes());
-        t[16..].copy_from_slice(&acc);
+/// HKDF context string separating the manifest-authentication domain.
+const AUTH_INFO: &[u8] = b"dfim-manifest-auth-v1";
 
-        let sha384_out = {
-            let mut hasher = Sha384::new();
-            hasher.update(t);
-            hasher.finalize()
-        };
-
-        let mut mix = [0u8; 8 + 8 + DK_LEN + 16];
-        mix[..t.len()].copy_from_slice(&t);
-        mix[t.len()..t.len() + 16].copy_from_slice(&sha384_out[..16]);
-        acc = sha256_digest(&mix[..t.len() + 16]);
+/// Derive a deterministic salt: `S = SHA256(salt_label || seed)`.
+pub fn derive_salt(salt_label: &[u8], seed: &[u8]) -> DfimResult<[u8; SHA256_LEN]> {
+    if seed.is_empty() {
+        return Err(DfimError::EmptyInput);
     }
-    acc
-}
-
-/// Derive salt: `S = SHA256(salt_label || le64(crystal_index))`.
-///
-/// /// [DFIM_AUDIT_LMT] Proof: [L=O(1), M=O(1), T=O(1)]
-pub fn derive_salt(crystal_index: f64, salt_label: &[u8]) -> DfimResult<[u8; DK_LEN]> {
-    if !crystal_index.is_finite() {
-        return Err(DfimError::InvalidParameter);
-    }
+    let label_len = salt_label.len().min(200);
+    let seed_len = seed.len().min(56);
     let mut buf = [0u8; 256];
-    let label_len = salt_label.len().min(248);
     buf[..label_len].copy_from_slice(&salt_label[..label_len]);
-    buf[label_len..label_len + 8].copy_from_slice(&crystal_index.to_le_bytes());
-    Ok(sha256_digest(&buf[..label_len + 8]))
+    buf[label_len..label_len + seed_len].copy_from_slice(&seed[..seed_len]);
+    Ok(sha256_digest(&buf[..label_len + seed_len]))
 }
 
-/// Derive authentication key via PBKDF2-HMAC-SHA256.
-///
-/// /// [DFIM_AUDIT_LMT] Proof: [L=O(I), M=O(1), T=O(I)]
-pub fn derive_authentication_key(
-    coeffs: &CoefficientSeed,
-    crystal_index: f64,
-    salt_label: &[u8],
-) -> DfimResult<(AuthKey, u32)> {
-    let password = nonlinear_seed_expansion(coeffs);
-    let iterations = pbkdf2_iterations(crystal_index)?;
-    let salt = derive_salt(crystal_index, salt_label)?;
-
+/// Derive an authentication key via HKDF-SHA256.
+pub fn derive_authentication_key(seed: &AuthSeed, salt: &[u8], info: &[u8]) -> DfimResult<AuthKey> {
+    use hkdf::Hkdf;
+    let hk = Hkdf::<Sha256>::new(Some(salt), seed);
     let mut key = [0u8; DK_LEN];
-    pbkdf2::<HmacSha256>(&password, &salt, iterations, &mut key)
+    hk.expand(info, &mut key)
         .map_err(|_| DfimError::IntegrityFailure)?;
-
-    Ok((key, iterations))
+    Ok(key)
 }
 
 /// Compute HMAC-SHA256 authentication tag over manifest bytes.
-///
-/// /// [DFIM_AUDIT_LMT] Proof: [L=O(n), M=O(1), T=O(n)]
 pub fn authentication_tag(key: &AuthKey, manifest_bytes: &[u8]) -> DfimResult<AuthTag> {
     if manifest_bytes.is_empty() {
         return Err(DfimError::EmptyInput);
@@ -103,8 +64,6 @@ pub fn authentication_tag(key: &AuthKey, manifest_bytes: &[u8]) -> DfimResult<Au
 /// Build canonical manifest bytes from anchor coordinates and abjad values.
 ///
 /// `manifest_bytes = UTF-8(PROTOCOL_ID + "\n" + "anchors" + "\n" + coords + "\n" + abjad)`
-///
-/// /// [DFIM_AUDIT_LMT] Proof: [L=O(n), M=O(n), T=O(n)]
 pub fn canonical_manifest_bytes(coords: &[u64], abjad: &[u64]) -> DfimResult<alloc::vec::Vec<u8>> {
     if coords.is_empty() && abjad.is_empty() {
         return Err(DfimError::EmptyInput);
@@ -134,25 +93,16 @@ pub fn canonical_manifest_bytes(coords: &[u64], abjad: &[u64]) -> DfimResult<all
     Ok(manifest.into_bytes())
 }
 
-/// Full authentication pipeline: derive key and compute tag.
-///
-/// /// [DFIM_AUDIT_LMT] Proof: [L=O(I+n), M=O(n), T=O(I+n)]
-pub fn authenticate_manifest(
-    coeffs: &CoefficientSeed,
-    crystal_index: f64,
-    manifest_bytes: &[u8],
-) -> DfimResult<(AuthTag, u32)> {
-    let (key, iterations) =
-        derive_authentication_key(coeffs, crystal_index, default_salt_label_const())?;
-    let tag = authentication_tag(&key, manifest_bytes)?;
-    Ok((tag, iterations))
+/// Full authentication pipeline: derive HKDF key and compute HMAC tag.
+pub fn authenticate_manifest(seed: &AuthSeed, manifest_bytes: &[u8]) -> DfimResult<AuthTag> {
+    let salt = derive_salt(default_salt_label_const(), seed)?;
+    let key = derive_authentication_key(seed, &salt, AUTH_INFO)?;
+    authentication_tag(&key, manifest_bytes)
 }
 
 /// HKDF-SHA256 expand step for build-identity key material.
 ///
-/// `HKDF-SHA256(IKM=build_identity_hash_hex_ascii, salt=domain, info=context)`
-///
-/// /// [DFIM_AUDIT_LMT] Proof: [L=O(n), M=O(1), T=O(n)]
+/// `HKDF-SHA256(IKM=ikm, salt=domain, info=context)`
 pub fn hkdf_sha256_expand(
     ikm: &[u8],
     salt: &[u8],
@@ -173,48 +123,53 @@ pub fn hkdf_sha256_expand(
     Ok(okm)
 }
 
-fn sha256_concat_f64(values: &[f64; 8]) -> AuthKey {
-    let mut buf = [0u8; 64];
-    for (i, v) in values.iter().enumerate() {
-        buf[i * 8..(i + 1) * 8].copy_from_slice(&v.to_le_bytes());
-    }
-    sha256_digest(&buf)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::constants::CALIBRATED_PBKDF2_ITERATIONS;
-    use crate::CRYSTAL_STABILITY_INDEX;
 
-    #[test]
-    fn pbkdf2_iteration_count_at_crystal_index() {
-        let (_, iters) = derive_authentication_key(
-            &[0.0; 8],
-            CRYSTAL_STABILITY_INDEX,
-            default_salt_label_const(),
-        )
-        .expect("derive");
-        assert_eq!(iters, CALIBRATED_PBKDF2_ITERATIONS);
+    fn seed() -> AuthSeed {
+        [0x42; DK_LEN]
     }
 
     #[test]
-    fn seed_expansion_is_deterministic() {
-        let coeffs: CoefficientSeed = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
-        let a = nonlinear_seed_expansion(&coeffs);
-        let b = nonlinear_seed_expansion(&coeffs);
+    fn derive_salt_is_deterministic_and_domain_separated() {
+        let a = derive_salt(b"label", &seed()).expect("salt");
+        let b = derive_salt(b"label", &seed()).expect("salt");
+        let c = derive_salt(b"other", &seed()).expect("salt");
         assert_eq!(a, b);
+        assert_ne!(a, c);
+    }
+
+    #[test]
+    fn derive_salt_rejects_empty_seed() {
+        assert_eq!(derive_salt(b"label", b""), Err(DfimError::EmptyInput));
+    }
+
+    #[test]
+    fn derive_authentication_key_is_deterministic() {
+        let a = derive_authentication_key(&seed(), b"salt", AUTH_INFO).expect("key");
+        let b = derive_authentication_key(&seed(), b"salt", AUTH_INFO).expect("key");
+        let c = derive_authentication_key(&seed(), b"salt", b"other").expect("key");
+        assert_eq!(a, b);
+        assert_ne!(a, c);
     }
 
     #[test]
     fn authentication_tag_changes_with_manifest() {
-        let coeffs = [0.1; 8];
-        let (key, _) =
-            derive_authentication_key(&coeffs, CRYSTAL_STABILITY_INDEX, default_salt_label_const())
-                .expect("derive");
+        let key = derive_authentication_key(&seed(), b"salt", AUTH_INFO).expect("key");
         let t1 = authentication_tag(&key, b"manifest-a").expect("tag");
         let t2 = authentication_tag(&key, b"manifest-b").expect("tag");
         assert_ne!(t1, t2);
+    }
+
+    #[test]
+    fn authenticate_manifest_is_deterministic_and_seed_bound() {
+        let m = b"manifest-bytes";
+        let t1 = authenticate_manifest(&seed(), m).expect("tag");
+        let t2 = authenticate_manifest(&seed(), m).expect("tag");
+        let other = authenticate_manifest(&[0x24; DK_LEN], m).expect("tag");
+        assert_eq!(t1, t2);
+        assert_ne!(t1, other);
     }
 
     #[test]
