@@ -1,0 +1,9 @@
+allow_repo_commands: true
+
+commands:
+  test: DFIM_CRYPTO_KEY=test-key-0123456789abcdef0123456789abcdef cargo test --no-fail-fast -p dfim_core_engine -p dfim_cli_provisioner -p dfim_host_init -p dfim_windows_uefi -p dfim_management_api
+  lint: DFIM_CRYPTO_KEY=test-key-0123456789abcdef0123456789abcdef cargo clippy -p dfim_core_engine -p dfim_cli_provisioner -p dfim_host_init -p dfim_windows_uefi -p dfim_management_api --all-targets
+
+ignore_patterns:
+  - "target/**"
+  - "fuzz/target/**"
