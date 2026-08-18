@@ -391,7 +391,7 @@ async fn login(Json(creds): Json<auth::LoginRequest>) -> Result<Json<auth::Token
 fn make_router(state: AppState) -> Router {
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE])
-        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION, "X-Tenant-ID".parse().unwrap()])
+        .allow_headers([header::CONTENT_TYPE, header::AUTHORIZATION])
         .allow_origin(Any);
 
     Router::new()

@@ -27,7 +27,6 @@ services:
     environment:
       DFIM_API_BIND: 0.0.0.0:3000
       DFIM_JWT_SECRET: ${DFIM_JWT_SECRET:?set DFIM_JWT_SECRET (>=32 bytes)}
-      DFIM_CRYPTO_KEY: ${DFIM_CRYPTO_KEY:?set DFIM_CRYPTO_KEY}
       DFIM_ADMIN_USER: ${DFIM_ADMIN_USER:-admin}
       DFIM_ADMIN_PASSWORD: ${DFIM_ADMIN_PASSWORD:?set DFIM_ADMIN_PASSWORD}
       DATABASE_URL: postgres://dfim:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres/dfim_production
