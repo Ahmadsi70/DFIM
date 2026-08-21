@@ -23,7 +23,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        crate: [dfim_core_engine, dfim_management_api, dfim_plugin_sdk]
+        crate:
+          [
+            dfim_core_engine,
+            dfim_management_api,
+            dfim_plugin_sdk,
+            dfim_host_init,
+            dfim_cli_provisioner,
+            dfim_windows_uefi,
+          ]
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -33,6 +41,41 @@ jobs:
       - run: cargo test -p ${{ matrix.crate }} --lib
       - run: cargo fmt --check -p ${{ matrix.crate }}
       - run: cargo clippy -p ${{ matrix.crate }} -- -D warnings
+
+  ebpf-userspace:
+    runs-on: ubuntu-latest
+    env:
+      # Compile-only gate: the probe object is built separately in ebpf-probe.
+      DFIM_SKIP_EBPF_BUILD: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt, clippy
+      - run: cargo build -p dfim-ebpf-user --release
+      # Bin-only crate: tests live in the binary targets, not a lib.
+      - run: cargo test -p dfim-ebpf-user --bins
+      - run: cargo fmt --check -p dfim-ebpf-user
+      - run: cargo clippy -p dfim-ebpf-user --bins -- -D warnings
+
+  ebpf-probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+          components: rust-src
+      - name: Type-check eBPF probe for bpfel-unknown-none
+        shell: bash
+        env:
+          # Runner BTF may be absent or unparsable; fall back to placeholder offsets.
+          DFIM_ALLOW_UNVERIFIED_BTF_FALLBACK: "1"
+        run: |
+          sep=$'\x1f'
+          export CARGO_ENCODED_RUSTFLAGS="--cfg=bpf_target_arch=\"x86_64\"${sep}-Cdebuginfo=2${sep}-Clink-arg=--btf${sep}-Cllvm-args=-bpf-stack-size=16384"
+          rustup run nightly cargo check --package dfim-ebpf -Z build-std=core --bins --release --target bpfel-unknown-none
+      - run: cargo fmt --check -p dfim-ebpf
 
   integration-test:
     runs-on: ubuntu-latest
