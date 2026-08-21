@@ -1,0 +1,57 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "serialNumber": "urn:uuid:e03769a1-f692-4ded-8038-87b6a8394531",
+  "metadata": {
+    "timestamp": "2026-06-29T19:37:26.354484955Z",
+    "tools": [
+      {
+        "vendor": "CycloneDX",
+        "name": "cargo-cyclonedx",
+        "version": "0.5.9"
+      }
+    ],
+    "authors": [
+      {
+        "name": "DFIM Engineering"
+      }
+    ],
+    "component": {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_host_init",
+      "version": "0.1.0",
+      "description": "DFIM host binary initialization — dynamic evaluation license enforcement",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_host_init@0.1.0?download_url=file://.",
+      "components": [
+        {
+          "type": "library",
+          "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0 bin-target-0",
+          "name": "dfim_host_init",
+          "version": "0.1.0",
+          "purl": "pkg:cargo/dfim_host_init@0.1.0?download_url=file://.#src/lib.rs"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "cdx:rustc:sbom:target:triple",
+        "value": "x86_64-unknown-linux-gnu"
+      }
+    ]
+  },
+  "components": [],
+  "dependencies": [
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0"
+    }
+  ]
+}

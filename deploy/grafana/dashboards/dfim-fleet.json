@@ -1,0 +1,48 @@
+{
+  "title": "DFIM Fleet Integrity Dashboard",
+  "uid": "dfim-fleet",
+  "panels": [
+    {
+      "title": "API Throughput (req/s)",
+      "type": "graph",
+      "targets": [{"expr": "rate(dfim_http_requests_total[1m])", "legendFormat": "requests/s"}],
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}
+    },
+    {
+      "title": "API Error Rate",
+      "type": "graph",
+      "targets": [{"expr": "rate(dfim_http_errors_total[1m])", "legendFormat": "errors/s"}],
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8}
+    },
+    {
+      "title": "Fleet Health",
+      "type": "stat",
+      "targets": [
+        {"expr": "dfim_assets_total", "legendFormat": "Total Assets"},
+        {"expr": "dfim_alerts_active", "legendFormat": "Active Alerts"}
+      ],
+      "gridPos": {"x": 0, "y": 8, "w": 6, "h": 6}
+    },
+    {
+      "title": "Active Alerts",
+      "type": "stat",
+      "targets": [{"expr": "dfim_alerts_active", "legendFormat": "Alerts"}],
+      "gridPos": {"x": 6, "y": 8, "w": 6, "h": 6},
+      "fieldConfig": {"defaults": {"thresholds": {"steps": [{"color": "green", "value": 0}, {"color": "red", "value": 1}]}}}
+    },
+    {
+      "title": "API Latency (Prometheus)",
+      "type": "graph",
+      "targets": [{"expr": "rate(dfim_http_requests_total[5m])", "legendFormat": "throughput"}],
+      "gridPos": {"x": 12, "y": 8, "w": 12, "h": 6}
+    },
+    {
+      "title": "DFIM Build Info",
+      "type": "stat",
+      "targets": [{"expr": "dfim_build_info", "legendFormat": "Phase 5"}],
+      "gridPos": {"x": 0, "y": 14, "w": 24, "h": 4}
+    }
+  ],
+  "schemaVersion": 38,
+  "refresh": "10s"
+}

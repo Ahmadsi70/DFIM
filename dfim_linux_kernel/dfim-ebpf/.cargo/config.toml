@@ -1,0 +1,7 @@
+[build]
+target = "bpfel-unknown-none"
+
+[target.bpfel-unknown-none]
+linker = "bpf-linker"
+
+[target.bpfel-unknown-none.dependencies]

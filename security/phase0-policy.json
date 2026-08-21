@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "policy_id": "DFIM-PHASE0-ENTERPRISE-BASELINE",
+  "status": "approved-for-implementation",
+  "deployment_profile": "protected-scope",
+  "linux_content_enforcement": "ima-appraisal",
+  "ebpf_roles": [
+    "protected-scope-policy",
+    "enforcement-decision",
+    "security-telemetry"
+  ],
+  "unprotected_asset_action": "allow",
+  "protected_integrity_failure_action": "deny",
+  "unknown_policy_state_action": "deny-protected-only",
+  "sidecar_v1_trust": "integrity-checksum-only",
+  "sidecar_v2_requirement": "asymmetric-signature-and-anti-rollback",
+  "production_eval_license_allowed": false,
+  "controls": [
+    {
+      "id": "P0-C1",
+      "title": "Live content enforcement",
+      "decision": "Linux production enforcement uses IMA appraisal; eBPF snapshots are not accepted as proof of current file content.",
+      "phase": 1,
+      "priority": "critical"
+    },
+    {
+      "id": "P0-C2",
+      "title": "Protected scope",
+      "decision": "Only explicitly enrolled assets are denied on integrity failure; unrelated executables are outside DFIM enforcement.",
+      "phase": 1,
+      "priority": "critical"
+    },
+    {
+      "id": "P0-C3",
+      "title": "Fail-closed configuration",
+      "decision": "Missing, malformed, or unresolved policy state denies protected assets and never silently downgrades to monitor mode.",
+      "phase": 1,
+      "priority": "critical"
+    },
+    {
+      "id": "P0-C4",
+      "title": "Authenticated metadata",
+      "decision": "DFIMBOOT v2 must use an asymmetric signature rooted in an organizational trust anchor.",
+      "phase": 2,
+      "priority": "critical"
+    },
+    {
+      "id": "P0-C5",
+      "title": "Anti-rollback",
+      "decision": "A monotonic release counter must be enforced by TPM NV or an authenticated baseline registry.",
+      "phase": 2,
+      "priority": "critical"
+    },
+    {
+      "id": "P0-C6",
+      "title": "Attestation",
+      "decision": "TPM evidence must use a fresh nonce-bound quote; PCR extend alone is insufficient for enterprise attestation.",
+      "phase": 3,
+      "priority": "high"
+    },
+    {
+      "id": "P0-C7",
+      "title": "Recovery",
+      "decision": "Every protected asset must have an authorized, tested restore path and auditable recovery evidence.",
+      "phase": 5,
+      "priority": "high"
+    },
+    {
+      "id": "P0-C8",
+      "title": "Supply-chain provenance",
+      "decision": "Release artifacts require locked dependencies, policy-scanned sources and licenses, reproducible CycloneDX SBOMs, signed provenance, and verifier-enforced publisher identity.",
+      "phase": 4,
+      "priority": "critical"
+    }
+  ],
+  "normative_references": [
+    "https://csrc.nist.gov/pubs/sp/800/193/final",
+    "https://slsa.dev/spec/v1.2/build-provenance",
+    "https://csrc.nist.gov/projects/cryptographic-module-validation-program"
+  ]
+}

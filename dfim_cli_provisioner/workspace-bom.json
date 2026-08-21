@@ -1,0 +1,178 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "version": 1,
+  "serialNumber": "urn:uuid:371034c8-067d-4f1c-a537-7030ac509669",
+  "metadata": {
+    "timestamp": "2026-06-29T19:37:26.350549087Z",
+    "tools": [
+      {
+        "vendor": "CycloneDX",
+        "name": "cargo-cyclonedx",
+        "version": "0.5.9"
+      }
+    ],
+    "authors": [
+      {
+        "name": "DFIM Engineering"
+      }
+    ],
+    "component": {
+      "type": "application",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_cli_provisioner#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_cli_provisioner",
+      "version": "0.1.0",
+      "description": "DFIM Ring-3 host provisioning tool — generates .dfim boot sidecars",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_cli_provisioner@0.1.0?download_url=file://.",
+      "components": [
+        {
+          "type": "application",
+          "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_cli_provisioner#0.1.0 bin-target-0",
+          "name": "dfim-provisioner",
+          "version": "0.1.0",
+          "purl": "pkg:cargo/dfim_cli_provisioner@0.1.0?download_url=file://.#src/main.rs"
+        }
+      ]
+    },
+    "properties": [
+      {
+        "name": "cdx:rustc:sbom:target:triple",
+        "value": "x86_64-unknown-linux-gnu"
+      }
+    ]
+  },
+  "components": [
+    {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_core_engine",
+      "version": "0.1.0",
+      "description": "Deterministic Firmware Integrity Matrix — Layer-0 core mathematics, FEC, and cryptographic integrity",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_core_engine@0.1.0?download_url=file://../dfim_core_engine"
+    },
+    {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_host_init",
+      "version": "0.1.0",
+      "description": "DFIM host binary initialization — dynamic evaluation license enforcement",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_host_init@0.1.0?download_url=file://../dfim_host_init"
+    },
+    {
+      "type": "library",
+      "bom-ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_windows_uefi#0.1.0",
+      "author": "DFIM Engineering",
+      "name": "dfim_windows_uefi",
+      "version": "0.1.0",
+      "description": "DFIM Windows UEFI Ring-1 boot guard — intercepts bootmgfw.efi before NT kernel init",
+      "scope": "required",
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/dfim_windows_uefi@0.1.0?download_url=file://../dfim_windows_uefi"
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#clap@4.6.1",
+      "name": "clap",
+      "version": "4.6.1",
+      "description": "A simple to use, efficient, and full-featured Command Line Argument Parser",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "1ddb117e43bbf7dacf0a4190fef4d345b9bad68dfc649cb349e7d17d28428e51"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT OR Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/clap@4.6.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/clap-rs/clap"
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "bom-ref": "registry+https://github.com/rust-lang/crates.io-index#litcrypt@0.4.0",
+      "author": "Robin Syihab (r@ansvia.com)",
+      "name": "litcrypt",
+      "version": "0.4.0",
+      "description": "Let's encrypt your string statically during compile time",
+      "scope": "required",
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "f59c980a4d113c6e9ff015837ce1e387bd7dc220f5586887a3fc8d6f237c5616"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "Apache-2.0"
+        }
+      ],
+      "purl": "pkg:cargo/litcrypt@0.4.0",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/anvie/litcrypt.rs"
+        }
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_cli_provisioner#0.1.0",
+      "dependsOn": [
+        "registry+https://github.com/rust-lang/crates.io-index#clap@4.6.1",
+        "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0",
+        "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0",
+        "path+file:///mnt/c/Users/badri/DFIM/dfim_windows_uefi#0.1.0",
+        "registry+https://github.com/rust-lang/crates.io-index#litcrypt@0.4.0"
+      ]
+    },
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_core_engine#0.1.0"
+    },
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_host_init#0.1.0"
+    },
+    {
+      "ref": "path+file:///mnt/c/Users/badri/DFIM/dfim_windows_uefi#0.1.0"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#clap@4.6.1"
+    },
+    {
+      "ref": "registry+https://github.com/rust-lang/crates.io-index#litcrypt@0.4.0"
+    }
+  ]
+}

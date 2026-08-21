@@ -1,0 +1,22 @@
+[package]
+name = "dfim-ebpf"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "DFIM eBPF LSM kernel probe — Merkle + Hamming integrity enforcement"
+publish = false
+autobins = false
+autoexamples = false
+build = "build.rs"
+
+[[bin]]
+name = "dfim-ebpf"
+path = "src/main.rs"
+test = false
+
+[dependencies]
+aya-ebpf = "0.1.1"
+dfim_core_engine = { version = "0.1.0", path = "../../dfim_core_engine", default-features = false, features = ["bpf"] }
+
+[build-dependencies]

@@ -1,0 +1,65 @@
+name: DFIM Bounded Fuzzing
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master"]
+  schedule:
+    # Nightly UTC run keeps parser coverage moving outside pull requests.
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  DFIM_CRYPTO_KEY: "ci-only-dfim-fuzz-key-material-2026"
+
+jobs:
+  fuzz:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: parse_block_stream
+            max_len: 65536
+          - target: parse_authenticated_state_db
+            max_len: 65536
+          - target: parse_boot_manifest
+            max_len: 65536
+          - target: parse_rollback_baseline
+            max_len: 64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Install nightly Rust
+        run: |
+          rustup toolchain install nightly --profile minimal
+          rustup override set nightly
+
+      - name: Install exact cargo-fuzz
+        run: cargo install cargo-fuzz --version 0.13.2 --locked
+
+      - name: Build all fuzz targets
+        run: cargo fuzz build
+
+      - name: Run bounded fuzz target
+        run: >-
+          cargo fuzz run ${{ matrix.target }}
+          fuzz/corpus/${{ matrix.target }}
+          -- -max_total_time=60 -max_len=${{ matrix.max_len }}
+
+      - name: Upload reproducer and evolved corpus
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: fuzz-${{ matrix.target }}-${{ github.run_id }}
+          path: |
+            fuzz/artifacts/${{ matrix.target }}/
+            fuzz/corpus/${{ matrix.target }}/
+          if-no-files-found: warn
+          retention-days: 14

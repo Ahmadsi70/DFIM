@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DFIM Offline Report</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --warn: #f97316;
+      --ok: #22c55e;
+      --bad: #ef4444;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+      }
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 1.8rem; }
+    .meta { color: var(--muted); margin-bottom: 24px; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.15);
+    }
+    .card .label { color: var(--muted); font-size: .85rem; }
+    .card .value { font-size: 1.8rem; font-weight: 700; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .panel {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .panel h2 { margin-top: 0; font-size: 1.1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid rgba(148,163,184,.25); }
+    th { color: var(--muted); font-weight: 600; }
+    code { font-size: .82rem; word-break: break-all; }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 40px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .bar-label { font-size: .85rem; }
+    .bar-track {
+      background: rgba(148,163,184,.2);
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #818cf8);
+    }
+    .bar-value { text-align: right; font-variant-numeric: tabular-nums; }
+    .muted { color: var(--muted); }
+    footer { margin-top: 32px; color: var(--muted); font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>DFIM Offline Report</h1>
+    <p class="meta">Source: c:\Users\badri\DFIM\install\demo\audit.jsonl · Generated: 2026-07-12 13:50:29 UTC · Events: 2</p>
+
+    <div class="cards">
+      <div class="card"><div class="label">Verify</div><div class="value">2</div></div>
+      <div class="card"><div class="label">Policy deny</div><div class="value warn">0</div></div>
+      <div class="card"><div class="label">Recovery</div><div class="value">0</div></div>
+      <div class="card"><div class="label">Success</div><div class="value ok">1</div></div>
+      <div class="card"><div class="label">Failure / alerts</div><div class="value bad">1 / 1</div></div>
+    </div>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Events by type</h2>
+        <div class="bar-row"><span class="bar-label">verify_v1</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">2</span></div>
+      </section>
+      <section class="panel">
+        <h2>Hourly volume (UTC)</h2>
+        <div class="bar-row"><span class="bar-label">2026-07-12 13:00</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">2</span></div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>Recent alerts</h2>
+      <table>
+        <thead>
+          <tr><th>Time</th><th>Event</th><th>Outcome</th><th>Asset</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2026-07-12 13:50:06 UTC</td><td>verify_v1</td><td>failure</td><td><code>sha256:d45d6ec9da788d800899b3872132807c3d19d0858e35453f7a891da84456e40a</code></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Local-only report from DFIM audit JSONL. For live SOC integration use OpenTelemetry Collector or Grafana ops stack.
+    </footer>
+  </div>
+</body>
+</html>

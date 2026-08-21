@@ -1,0 +1,60 @@
+extensions:
+  file_storage:
+    directory: ${env:DFIM_OTEL_STORAGE_DIR}
+    create_directory: true
+    directory_permissions: "0700"
+    fsync: true
+    compaction:
+      on_start: true
+      cleanup_on_start: true
+      directory: ${env:DFIM_OTEL_STORAGE_DIR}
+
+receivers:
+  filelog/dfim_audit:
+    include:
+      - ${env:DFIM_TELEMETRY_OUT}
+    start_at: beginning
+    poll_interval: 500ms
+    storage: file_storage
+    operators:
+      - id: parse_dfim_json
+        type: json_parser
+        parse_from: body
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 256
+    spike_limit_mib: 64
+  batch:
+    send_batch_size: 1024
+    send_batch_max_size: 2048
+    timeout: 5s
+
+exporters:
+  otlp/enterprise:
+    endpoint: ${env:DFIM_OTLP_ENDPOINT}
+    timeout: 10s
+    sending_queue:
+      enabled: true
+      storage: file_storage
+      queue_size: 10000
+      num_consumers: 4
+    retry_on_failure:
+      enabled: true
+      initial_interval: 5s
+      max_interval: 30s
+      max_elapsed_time: 15m
+
+service:
+  extensions:
+    - file_storage
+  pipelines:
+    logs/dfim_audit:
+      receivers:
+        - filelog/dfim_audit
+      processors:
+        - memory_limiter
+        - batch
+      exporters:
+        - otlp/enterprise

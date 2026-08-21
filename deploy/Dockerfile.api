@@ -1,0 +1,21 @@
+# DFIM Management API — Multi-stage Docker build
+FROM rust:1.85-slim-bookworm AS builder
+
+WORKDIR /build
+RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+
+COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
+COPY dfim_core_engine/ ./dfim_core_engine/
+COPY dfim_management_api/ ./dfim_management_api/
+COPY build-support/ ./build-support/
+
+ARG DFIM_CRYPTO_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+ENV DFIM_CRYPTO_KEY=$DFIM_CRYPTO_KEY
+RUN cargo build -p dfim_management_api --release
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /build/target/release/dfim_management_api /usr/local/bin/dfim-management-api
+EXPOSE 3000
+HEALTHCHECK --interval=10s --timeout=5s --retries=3 CMD curl -f http://localhost:3000/health || exit 1
+ENTRYPOINT ["/usr/local/bin/dfim-management-api"]

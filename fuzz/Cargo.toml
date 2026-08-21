@@ -1,0 +1,44 @@
+[package]
+name = "dfim-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4.13"
+dfim_core_engine = { path = "../dfim_core_engine", default-features = false, features = ["alloc", "full"] }
+dfim_windows_uefi = { path = "../dfim_windows_uefi" }
+
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "parse_block_stream"
+path = "fuzz_targets/parse_block_stream.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "parse_authenticated_state_db"
+path = "fuzz_targets/parse_authenticated_state_db.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "parse_boot_manifest"
+path = "fuzz_targets/parse_boot_manifest.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "parse_rollback_baseline"
+path = "fuzz_targets/parse_rollback_baseline.rs"
+test = false
+doc = false
+bench = false
