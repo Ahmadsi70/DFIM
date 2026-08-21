@@ -2,6 +2,7 @@
 
 use chrono::{DateTime, Utc};
 use sqlx::postgres::{PgPool, PgPoolOptions};
+use std::collections::HashMap;
 use std::env;
 
 pub type DbPool = PgPool;
@@ -176,6 +177,26 @@ pub async fn get_asset(pool: &DbPool, tenant: &str, id: &str) -> Option<super::A
     sqlx::query_as::<_, super::AssetRecord>(
         "SELECT asset_id, display_name, asset_kind, host_name, status, integrity_hash, last_verified, enrolled_at, policy_id, tenant_id FROM assets WHERE asset_id = $1 AND tenant_id = $2"
     ).bind(id).bind(tenant).fetch_optional(pool).await.ok().flatten()
+}
+
+/// Resolve host names for the given asset ids with a single tenant-scoped query.
+pub async fn host_names_for_assets(
+    pool: &DbPool,
+    tenant: &str,
+    asset_ids: &[String],
+) -> HashMap<String, String> {
+    if asset_ids.is_empty() {
+        return HashMap::new();
+    }
+    let rows: Vec<(String, String)> = sqlx::query_as(
+        "SELECT asset_id, host_name FROM assets WHERE tenant_id = $1 AND asset_id = ANY($2)",
+    )
+    .bind(tenant)
+    .bind(asset_ids)
+    .fetch_all(pool)
+    .await
+    .unwrap_or_default();
+    rows.into_iter().collect()
 }
 
 pub async fn insert_asset(pool: &DbPool, a: &super::AssetRecord) -> Result<(), sqlx::Error> {
