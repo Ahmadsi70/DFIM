@@ -10,7 +10,7 @@ use dfim_core_engine::{
     boot_validate::{DFIM_BLOCK_SIZE, MAX_BOOT_BLOCKS},
     crypto::constant_time_hash_eq,
     digest::sha256_digest,
-    hamming::{encode_block, decode_block},
+    hamming::{decode_block, encode_block},
     SHA256_LEN,
 };
 

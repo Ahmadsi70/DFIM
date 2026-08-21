@@ -23,22 +23,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        crate:
-          [
-            dfim_core_engine,
-            dfim_management_api,
-            dfim_plugin_sdk,
-            dfim_host_init,
-            dfim_cli_provisioner,
-            dfim_windows_uefi,
-          ]
+        include:
+          - crate: dfim_core_engine
+            test: --lib
+          - crate: dfim_host_init
+            test: --lib
+          - crate: dfim_plugin_sdk
+            test: --lib
+          - crate: dfim_windows_uefi
+            test: --lib
+          # Bin-only crates: tests live in the binary targets.
+          - crate: dfim_management_api
+            test: --bins
+          - crate: dfim_cli_provisioner
+            test: --bins
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
       - run: cargo build -p ${{ matrix.crate }} --release
-      - run: cargo test -p ${{ matrix.crate }} --lib
+      - run: cargo test -p ${{ matrix.crate }} ${{ matrix.test }}
       - run: cargo fmt --check -p ${{ matrix.crate }}
       - run: cargo clippy -p ${{ matrix.crate }} -- -D warnings
 

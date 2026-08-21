@@ -94,6 +94,4 @@ pub use kdf::{
     derive_salt, hkdf_sha256_expand, AuthKey, AuthSeed, AuthTag,
 };
 #[cfg(feature = "full")]
-pub use phasor::{
-    build_identity_hash, build_identity_hex, PhasorTerm,
-};
+pub use phasor::{build_identity_hash, build_identity_hex, PhasorTerm};
