@@ -579,17 +579,15 @@ async fn siem_export(
         .await
         .unwrap_or_default();
 
-    // Resolve host names for the distinct assets referenced by the alerts.
-    let mut host_names: HashMap<String, String> = HashMap::new();
-    for asset_id in alerts
+    // Resolve host names for the distinct assets referenced by the alerts
+    // with a single batched query instead of one query per asset.
+    let asset_ids: Vec<String> = alerts
         .iter()
         .map(|a| a.asset_id.clone())
         .collect::<std::collections::HashSet<_>>()
-    {
-        if let Some(asset) = db::get_asset(&state.db, &tenant, &asset_id).await {
-            host_names.insert(asset_id, asset.host_name);
-        }
-    }
+        .into_iter()
+        .collect();
+    let host_names = db::host_names_for_assets(&state.db, &tenant, &asset_ids).await;
 
     let events: Vec<siem::DfimSiemEvent> = alerts
         .into_iter()
