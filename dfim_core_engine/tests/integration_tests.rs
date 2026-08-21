@@ -56,7 +56,7 @@ fn integration_boot_block_constants() {
 
 #[test]
 fn integration_max_image_size() {
-    let max = MAX_BOOT_BLOCKS as usize * DFIM_BLOCK_SIZE;
+    let max = MAX_BOOT_BLOCKS * DFIM_BLOCK_SIZE;
     assert_eq!(max, 262144);
     let valid = vec![0u8; max];
     assert_eq!(sha256_digest(&valid).len(), SHA256_LEN);
@@ -114,7 +114,7 @@ fn integration_fec_detects_corruption() {
     let matched = decoded == data;
     // Either it corrected (good) or detected and fixed (good)
     // The point is: no panic, no crash
-    assert!(true, "FEC corruption handling: matched={}", matched);
+    println!("FEC corruption handling: matched={matched}");
 }
 
 #[test]
