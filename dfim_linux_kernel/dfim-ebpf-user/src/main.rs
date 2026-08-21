@@ -141,9 +141,12 @@ fn verify_live_image_against_sidecar(
     let sidecar_bytes =
         std::fs::read(sidecar).with_context(|| format!("read sidecar {}", sidecar.display()))?;
 
-    let live_sidecar = build_boot_sidecar(&image).map_err(|error| siem_dfim_error(target, error))?;
-    let live_manifest = parse_boot_manifest(&live_sidecar).map_err(|error| siem_dfim_error(target, error))?;
-    let disk_manifest = parse_boot_manifest(&sidecar_bytes).map_err(|error| siem_dfim_error(target, error))?;
+    let live_sidecar =
+        build_boot_sidecar(&image).map_err(|error| siem_dfim_error(target, error))?;
+    let live_manifest =
+        parse_boot_manifest(&live_sidecar).map_err(|error| siem_dfim_error(target, error))?;
+    let disk_manifest =
+        parse_boot_manifest(&sidecar_bytes).map_err(|error| siem_dfim_error(target, error))?;
 
     validate_boot_image(&image, &disk_manifest).map_err(|error| siem_dfim_error(target, error))?;
 
