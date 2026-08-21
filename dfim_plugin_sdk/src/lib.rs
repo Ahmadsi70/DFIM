@@ -31,7 +31,7 @@
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tracing::{info, error};
+use tracing::{error, info};
 use wasmtime::*;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -98,8 +98,8 @@ pub struct PluginManifest {
     pub version: String,
     pub author: String,
     pub description: String,
-    pub industry: String,  // banking, telecom, defense, healthcare, general
-    pub compliance: Vec<String>,  // PCI-DSS, HIPAA, NERC-CIP, NIST-800-53
+    pub industry: String, // banking, telecom, defense, healthcare, general
+    pub compliance: Vec<String>, // PCI-DSS, HIPAA, NERC-CIP, NIST-800-53
     pub wasm_sha256: String,
 }
 
@@ -179,8 +179,7 @@ impl PluginEngine {
 
     /// Evaluate an integrity event through a registered policy plugin.
     pub fn evaluate(&mut self, plugin_id: &str, input: &PolicyInput) -> Result<PolicyOutput> {
-        let plugin = self.registry.get(plugin_id)
-            .context("Plugin not found")?;
+        let plugin = self.registry.get(plugin_id).context("Plugin not found")?;
 
         let stats = self.stats.get_mut(plugin_id).unwrap();
         stats.evaluations += 1;
@@ -189,7 +188,9 @@ impl PluginEngine {
 
         // Create WASM store with fuel limit
         let mut store = Store::new(&self.engine, ());
-        store.set_fuel(1_000_000_000).context("Failed to set fuel")?; // 1B instructions
+        store
+            .set_fuel(1_000_000_000)
+            .context("Failed to set fuel")?; // 1B instructions
 
         // Create memory with 16 MB limit
         let memory_ty = MemoryType::new(1, Some(256)); // 1 page min, 256 pages max = 16 MB
@@ -206,21 +207,28 @@ impl PluginEngine {
         let mut linker = Linker::new(&self.engine);
 
         // Host function: dfim_log(message_ptr, message_len)
-        linker.func_wrap("dfim_host", "dfim_log", |_caller: Caller<'_, ()>, _ptr: i32, _len: i32| {
-            // In production: forward to tracing. In WASM: no-op for safety.
-        })?;
+        linker.func_wrap(
+            "dfim_host",
+            "dfim_log",
+            |_caller: Caller<'_, ()>, _ptr: i32, _len: i32| {
+                // In production: forward to tracing. In WASM: no-op for safety.
+            },
+        )?;
 
         // Host function: dfim_get_metadata(key_ptr, key_len) -> value_ptr
-        linker.func_wrap("dfim_host", "dfim_get_metadata",
+        linker.func_wrap(
+            "dfim_host",
+            "dfim_get_metadata",
             |mut caller: Caller<'_, ()>, key_ptr: i32, key_len: i32| -> i32 {
-                let mem = caller.get_export("memory")
+                let mem = caller
+                    .get_export("memory")
                     .and_then(|e| e.into_memory())
                     .unwrap();
                 let mut buf = vec![0u8; key_len as usize];
                 mem.read(&caller, key_ptr as usize, &mut buf).ok();
                 // Return 0 = not found (safe default)
                 0i32
-            }
+            },
         )?;
 
         // Instantiate the module
@@ -313,11 +321,17 @@ pub fn evaluate_banking_policy(input: &PolicyInput) -> PolicyOutput {
         risk += 0.4;
     }
     if input.tampered_blocks > 0 {
-        evidence.push(format!("{} tampered blocks detected", input.tampered_blocks));
+        evidence.push(format!(
+            "{} tampered blocks detected",
+            input.tampered_blocks
+        ));
         risk += 0.5;
     }
     if input.fec_corrected > 2 {
-        evidence.push(format!("{} FEC corrections — possible attack", input.fec_corrected));
+        evidence.push(format!(
+            "{} FEC corrections — possible attack",
+            input.fec_corrected
+        ));
         risk += 0.3;
     }
 
@@ -363,7 +377,10 @@ pub fn evaluate_defense_policy(input: &PolicyInput) -> PolicyOutput {
         };
     }
     if input.tampered_blocks > 0 {
-        evidence.push(format!("{} tampered blocks — possible APT", input.tampered_blocks));
+        evidence.push(format!(
+            "{} tampered blocks — possible APT",
+            input.tampered_blocks
+        ));
         return PolicyOutput {
             decision: PolicyDecision::Deny,
             reason: "NIST 800-53: zero-tolerance tamper detection".into(),
@@ -386,12 +403,21 @@ pub fn evaluate_defense_policy(input: &PolicyInput) -> PolicyOutput {
 pub fn evaluate_telecom_policy(input: &PolicyInput) -> PolicyOutput {
     let risk: f64 = (input.tampered_blocks as f64 * 0.15)
         + (input.fec_corrected as f64 * 0.05)
-        + if !input.attestation_verified { 0.3 } else { 0.0 };
+        + if !input.attestation_verified {
+            0.3
+        } else {
+            0.0
+        };
 
-    let decision = if risk > 0.5 { PolicyDecision::Deny }
-        else if risk > 0.2 { PolicyDecision::Escalate }
-        else if risk > 0.05 { PolicyDecision::AllowWithWarning }
-        else { PolicyDecision::Allow };
+    let decision = if risk > 0.5 {
+        PolicyDecision::Deny
+    } else if risk > 0.2 {
+        PolicyDecision::Escalate
+    } else if risk > 0.05 {
+        PolicyDecision::AllowWithWarning
+    } else {
+        PolicyDecision::Allow
+    };
 
     PolicyOutput {
         decision,

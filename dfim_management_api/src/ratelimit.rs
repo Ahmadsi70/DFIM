@@ -21,12 +21,17 @@ struct TokenBucket {
     tokens: f64,
     last_refill: Instant,
     rate: f64,       // tokens per second
-    max_tokens: f64,  // burst size
+    max_tokens: f64, // burst size
 }
 
 impl TokenBucket {
     fn new(rate: f64, burst: f64) -> Self {
-        Self { tokens: burst, last_refill: Instant::now(), rate, max_tokens: burst }
+        Self {
+            tokens: burst,
+            last_refill: Instant::now(),
+            rate,
+            max_tokens: burst,
+        }
     }
 
     fn try_consume(&mut self) -> bool {
@@ -58,7 +63,9 @@ impl RateLimiter {
     pub fn new(rate: u32, burst: u32) -> Self {
         let mut shards = Vec::with_capacity(SHARD_COUNT);
         for _ in 0..SHARD_COUNT {
-            shards.push(Shard { buckets: RwLock::new(HashMap::new()) });
+            shards.push(Shard {
+                buckets: RwLock::new(HashMap::new()),
+            });
         }
         Self {
             shards,
@@ -68,6 +75,7 @@ impl RateLimiter {
     }
 
     /// Number of shards (for monitoring/tests).
+    #[allow(dead_code)]
     pub fn shard_count(&self) -> usize {
         self.shards.len()
     }
@@ -89,12 +97,14 @@ impl RateLimiter {
     }
 
     /// Get current token count for an IP (for monitoring).
+    #[allow(dead_code)]
     pub fn tokens_remaining(&self, ip: IpAddr) -> f64 {
         let buckets = self.shards[self.shard_index(ip)].buckets.read();
         buckets.get(&ip).map(|b| b.tokens).unwrap_or(self.burst)
     }
 
     /// Clean up expired entries (call periodically).
+    #[allow(dead_code)]
     pub fn cleanup(&self, max_age: Duration) {
         let now = Instant::now();
         for shard in &self.shards {
@@ -104,6 +114,7 @@ impl RateLimiter {
     }
 
     /// Get total tracked IPs.
+    #[allow(dead_code)]
     pub fn tracked_ips(&self) -> usize {
         self.shards.iter().map(|s| s.buckets.read().len()).sum()
     }
@@ -130,7 +141,7 @@ mod tests {
         let ip2: IpAddr = "192.168.1.2".parse().unwrap();
         assert!(rl.check(ip1));
         assert!(!rl.check(ip1));
-        assert!(rl.check(ip2));  // Different IP, not rate-limited
+        assert!(rl.check(ip2)); // Different IP, not rate-limited
     }
 
     #[test]

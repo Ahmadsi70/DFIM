@@ -10,10 +10,23 @@ static ERROR_COUNT: AtomicU64 = AtomicU64::new(0);
 static ASSET_COUNT: AtomicU64 = AtomicU64::new(0);
 static ALERT_COUNT: AtomicU64 = AtomicU64::new(0);
 
-pub fn increment_requests() { REQUEST_COUNT.fetch_add(1, Ordering::Relaxed); }
-pub fn increment_errors() { ERROR_COUNT.fetch_add(1, Ordering::Relaxed); }
-pub fn set_asset_count(n: u64) { ASSET_COUNT.store(n, Ordering::Relaxed); }
-pub fn set_alert_count(n: u64) { ALERT_COUNT.store(n, Ordering::Relaxed); }
+// Instrumentation hooks are not yet called from request handling.
+#[allow(dead_code)]
+pub fn increment_requests() {
+    REQUEST_COUNT.fetch_add(1, Ordering::Relaxed);
+}
+#[allow(dead_code)]
+pub fn increment_errors() {
+    ERROR_COUNT.fetch_add(1, Ordering::Relaxed);
+}
+#[allow(dead_code)]
+pub fn set_asset_count(n: u64) {
+    ASSET_COUNT.store(n, Ordering::Relaxed);
+}
+#[allow(dead_code)]
+pub fn set_alert_count(n: u64) {
+    ALERT_COUNT.store(n, Ordering::Relaxed);
+}
 
 pub async fn metrics_handler() -> Response<Body> {
     let metrics = format!(

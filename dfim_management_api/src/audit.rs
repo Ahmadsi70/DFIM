@@ -2,6 +2,8 @@
 //!
 //! Logs all mutating operations (POST, PUT, DELETE) to a durable JSONL file.
 //! Format: {timestamp, user, tenant, action, resource, status, ip}
+// Mutation handlers are not yet wired to call into this module.
+#![allow(dead_code, clippy::too_many_arguments)]
 
 use chrono::{DateTime, Utc};
 use parking_lot::Mutex;
@@ -17,8 +19,8 @@ pub struct AuditEntry {
     pub timestamp: DateTime<Utc>,
     pub user: String,
     pub tenant: String,
-    pub action: String,      // POST, PUT, DELETE
-    pub resource: String,     // /v1/assets/xxx
+    pub action: String,   // POST, PUT, DELETE
+    pub resource: String, // /v1/assets/xxx
     pub status: u16,
     pub ip: String,
     pub user_agent: String,
@@ -31,15 +33,16 @@ pub struct AuditLogger {
 
 impl AuditLogger {
     pub fn new(path: &Path) -> Result<Self, std::io::Error> {
-        let file = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(path)?;
-        Ok(Self { writer: Mutex::new(Box::new(file)) })
+        let file = OpenOptions::new().create(true).append(true).open(path)?;
+        Ok(Self {
+            writer: Mutex::new(Box::new(file)),
+        })
     }
 
     pub fn to_stdout() -> Self {
-        Self { writer: Mutex::new(Box::new(std::io::stdout())) }
+        Self {
+            writer: Mutex::new(Box::new(std::io::stdout())),
+        }
     }
 
     pub fn log(&self, entry: &AuditEntry) {

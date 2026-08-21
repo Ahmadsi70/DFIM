@@ -7,31 +7,31 @@
 //! C5: TLS/HTTPS via rustls
 //! C10: Audit logging — structured JSONL mutation trail
 
-mod openapi;
-mod siem;
+mod audit;
 mod auth;
 mod db;
-mod ratelimit;
 mod metrics;
-mod audit;
+mod openapi;
+mod ratelimit;
+mod siem;
 
 use axum::{
-    Json, Router, extract::{Path, Query, State, ConnectInfo, Extension},
-    http::{Method, StatusCode, header},
+    extract::{ConnectInfo, Extension, Path, Query, State},
+    http::{header, Method, StatusCode},
     middleware,
     response::IntoResponse,
     routing::{get, post, put},
+    Json, Router,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use sha2::{Sha256, Digest};
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Arc;
-use tower_http::cors::{Any, CorsLayer};
-use tower_http::trace::TraceLayer;
 use tower_http::compression::CompressionLayer;
+use tower_http::cors::{Any, CorsLayer};
 use tower_http::limit::RequestBodyLimitLayer;
+use tower_http::trace::TraceLayer;
 use tracing_subscriber::{fmt, EnvFilter};
 use uuid::Uuid;
 
@@ -43,6 +43,8 @@ use uuid::Uuid;
 struct AppState {
     db: db::DbPool,
     rate_limiter: Arc<ratelimit::RateLimiter>,
+    // Held for Phase 5 C10 mutation auditing; handlers not yet wired.
+    #[allow(dead_code)]
     audit_logger: Arc<audit::AuditLogger>,
     start_time: DateTime<Utc>,
 }
@@ -76,74 +78,118 @@ impl AppState {
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 struct AssetRecord {
-    asset_id: String, display_name: String, asset_kind: String, host_name: String,
-    status: String, integrity_hash: Option<String>,
-    last_verified: DateTime<Utc>, enrolled_at: DateTime<Utc>,
-    policy_id: Option<String>, tenant_id: String,
+    asset_id: String,
+    display_name: String,
+    asset_kind: String,
+    host_name: String,
+    status: String,
+    integrity_hash: Option<String>,
+    last_verified: DateTime<Utc>,
+    enrolled_at: DateTime<Utc>,
+    policy_id: Option<String>,
+    tenant_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 struct PolicyRecord {
-    policy_id: String, name: String, version: i32,
-    enforcement_mode: String, tenant_id: String,
+    policy_id: String,
+    name: String,
+    version: i32,
+    enforcement_mode: String,
+    tenant_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 struct NodeRecord {
-    node_id: String, host_name: String, platform: String, status: String,
-    last_seen: DateTime<Utc>, asset_count: i32,
+    node_id: String,
+    host_name: String,
+    platform: String,
+    status: String,
+    last_seen: DateTime<Utc>,
+    asset_count: i32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 struct AlertRecord {
-    alert_id: String, severity: String, asset_id: String, message: String,
-    timestamp: DateTime<Utc>, acknowledged: bool, tenant_id: String,
+    alert_id: String,
+    severity: String,
+    asset_id: String,
+    message: String,
+    timestamp: DateTime<Utc>,
+    acknowledged: bool,
+    tenant_id: String,
 }
 
 #[derive(Debug, Deserialize)]
 struct PaginationParams {
-    offset: Option<i64>, limit: Option<i64>, status: Option<String>,
-    host: Option<String>, kind: Option<String>,
+    offset: Option<i64>,
+    limit: Option<i64>,
+    status: Option<String>,
+    host: Option<String>,
+    kind: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
 struct EnrollAssetRequest {
-    asset_id: String, display_name: String, asset_kind: String,
-    host_name: String, policy_id: Option<String>, integrity_hash: Option<String>,
+    asset_id: String,
+    display_name: String,
+    asset_kind: String,
+    host_name: String,
+    policy_id: Option<String>,
+    integrity_hash: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
 struct HealthResponse {
-    status: String, version: String, uptime_seconds: u64,
-    asset_count: Option<i64>, policy_count: Option<i64>,
-    alert_count: Option<i64>, node_count: Option<i64>,
+    status: String,
+    version: String,
+    uptime_seconds: u64,
+    asset_count: Option<i64>,
+    policy_count: Option<i64>,
+    alert_count: Option<i64>,
+    node_count: Option<i64>,
 }
 
 #[derive(Debug, Serialize)]
 struct FleetSummary {
-    total_assets: i64, healthy: i64, tampered: i64, blocked: i64, pending: i64,
-    total_nodes: i64, total_policies: i64, active_alerts: i64,
+    total_assets: i64,
+    healthy: i64,
+    tampered: i64,
+    blocked: i64,
+    pending: i64,
+    total_nodes: i64,
+    total_policies: i64,
+    active_alerts: i64,
     integrity_coverage_pct: f64,
 }
 
 #[derive(Debug, Serialize)]
-struct ErrorResponse { error: String, code: u16 }
+struct ErrorResponse {
+    error: String,
+    code: u16,
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // Helpers
 // ═══════════════════════════════════════════════════════════════════
 
-fn hash_sha256(data: &[u8]) -> String {
-    format!("sha256:{:x}", Sha256::digest(data))
-}
-
 fn api_error(status: StatusCode, msg: &str) -> (StatusCode, Json<ErrorResponse>) {
-    (status, Json(ErrorResponse { error: msg.to_string(), code: status.as_u16() }))
+    (
+        status,
+        Json(ErrorResponse {
+            error: msg.to_string(),
+            code: status.as_u16(),
+        }),
+    )
 }
 
 fn sanitize(input: &str) -> String {
-    input.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
-         .replace('"', "&quot;").replace('\'', "&#x27;")
+    input
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&#x27;")
 }
 
 /// Role-based authorization. Returns true when `role` is allowed to perform
@@ -183,32 +229,57 @@ async fn guard_middleware(
 
     // Rate limit check — ACTIVE
     if !state.rate_limiter.check(addr.ip()) {
-        return (StatusCode::TOO_MANY_REQUESTS,
-                Json(ErrorResponse { error: "Rate limit exceeded".into(), code: 429 })).into_response();
+        return (
+            StatusCode::TOO_MANY_REQUESTS,
+            Json(ErrorResponse {
+                error: "Rate limit exceeded".into(),
+                code: 429,
+            }),
+        )
+            .into_response();
     }
 
     // Auth check — ENFORCED (skip for health/openapi/login)
     if path != "/openapi.json" && path != "/v1/auth/login" {
-        let auth_header = headers.get(header::AUTHORIZATION)
+        let auth_header = headers
+            .get(header::AUTHORIZATION)
             .and_then(|v| v.to_str().ok())
             .unwrap_or("");
 
         if auth_header.is_empty() {
-            return (StatusCode::UNAUTHORIZED,
-                    Json(ErrorResponse { error: "Authentication required".into(), code: 401 })).into_response();
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(ErrorResponse {
+                    error: "Authentication required".into(),
+                    code: 401,
+                }),
+            )
+                .into_response();
         }
 
         match auth::verify_jwt(auth_header) {
             Ok(claims) => {
                 if !authorize(&claims.role, request.method(), &path) {
-                    return (StatusCode::FORBIDDEN,
-                            Json(ErrorResponse { error: "Insufficient role".into(), code: 403 })).into_response();
+                    return (
+                        StatusCode::FORBIDDEN,
+                        Json(ErrorResponse {
+                            error: "Insufficient role".into(),
+                            code: 403,
+                        }),
+                    )
+                        .into_response();
                 }
                 request.extensions_mut().insert(claims);
             }
             Err(_) => {
-                return (StatusCode::UNAUTHORIZED,
-                        Json(ErrorResponse { error: "Invalid token".into(), code: 401 })).into_response();
+                return (
+                    StatusCode::UNAUTHORIZED,
+                    Json(ErrorResponse {
+                        error: "Invalid token".into(),
+                        code: 401,
+                    }),
+                )
+                    .into_response();
             }
         }
     }
@@ -227,70 +298,113 @@ async fn health_check(State(state): State<AppState>) -> Json<HealthResponse> {
         db::count_policies(&state.db, "default"),
         db::count_alerts(&state.db, "default"),
         db::count_nodes(&state.db),
-    ).unwrap_or((None, None, None, None));
+    )
+    .unwrap_or((None, None, None, None));
 
     Json(HealthResponse {
-        status: "operational".into(), version: env!("CARGO_PKG_VERSION").into(),
-        uptime_seconds: uptime, asset_count, policy_count, alert_count, node_count,
+        status: "operational".into(),
+        version: env!("CARGO_PKG_VERSION").into(),
+        uptime_seconds: uptime,
+        asset_count,
+        policy_count,
+        alert_count,
+        node_count,
     })
 }
 
-async fn fleet_summary(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>) -> Json<FleetSummary> {
+async fn fleet_summary(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+) -> Json<FleetSummary> {
     let tenant = claims.tenant;
-    let summary = db::fleet_summary(&state.db, &tenant).await.unwrap_or_default();
+    let summary = db::fleet_summary(&state.db, &tenant)
+        .await
+        .unwrap_or_default();
     let total = summary.total_assets as f64;
     Json(FleetSummary {
-        total_assets: summary.total_assets, healthy: summary.healthy,
-        tampered: summary.tampered, blocked: summary.blocked, pending: summary.pending,
-        total_nodes: summary.total_nodes, total_policies: summary.total_policies,
+        total_assets: summary.total_assets,
+        healthy: summary.healthy,
+        tampered: summary.tampered,
+        blocked: summary.blocked,
+        pending: summary.pending,
+        total_nodes: summary.total_nodes,
+        total_policies: summary.total_policies,
         active_alerts: summary.active_alerts,
-        integrity_coverage_pct: if total > 0.0 { (summary.healthy as f64 / total) * 100.0 } else { 0.0 },
+        integrity_coverage_pct: if total > 0.0 {
+            (summary.healthy as f64 / total) * 100.0
+        } else {
+            0.0
+        },
     })
 }
 
-async fn list_assets(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
-                     Query(p): Query<PaginationParams>) -> Json<Vec<AssetRecord>> {
+async fn list_assets(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Query(p): Query<PaginationParams>,
+) -> Json<Vec<AssetRecord>> {
     let tenant = claims.tenant;
     let limit = p.limit.unwrap_or(100).min(1000); // hard cap at 1000 per page
     let offset = p.offset.unwrap_or(0);
-    let assets = db::list_assets(&state.db, &tenant, limit, offset, p.status.as_deref(),
-                                  p.host.as_deref(), p.kind.as_deref()).await.unwrap_or_default();
+    let assets = db::list_assets(
+        &state.db,
+        &tenant,
+        limit,
+        offset,
+        p.status.as_deref(),
+        p.host.as_deref(),
+        p.kind.as_deref(),
+    )
+    .await
+    .unwrap_or_default();
     Json(assets)
 }
 
-async fn get_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>, Path(id): Path<String>)
-    -> Result<Json<AssetRecord>, (StatusCode, Json<ErrorResponse>)>
-{
+async fn get_asset(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Path(id): Path<String>,
+) -> Result<Json<AssetRecord>, (StatusCode, Json<ErrorResponse>)> {
     let tenant = claims.tenant;
-    db::get_asset(&state.db, &tenant, &id).await
+    db::get_asset(&state.db, &tenant, &id)
+        .await
         .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "Asset not found"))
         .map(Json)
 }
 
-async fn enroll_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
-                      Json(req): Json<EnrollAssetRequest>)
-    -> Result<(StatusCode, Json<AssetRecord>), (StatusCode, Json<ErrorResponse>)>
-{
+async fn enroll_asset(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Json(req): Json<EnrollAssetRequest>,
+) -> Result<(StatusCode, Json<AssetRecord>), (StatusCode, Json<ErrorResponse>)> {
     let tenant = claims.tenant.clone();
     let record = AssetRecord {
-        asset_id: sanitize(&req.asset_id), display_name: sanitize(&req.display_name),
-        asset_kind: sanitize(&req.asset_kind), host_name: sanitize(&req.host_name),
-        status: "pending".into(), integrity_hash: req.integrity_hash,
-        last_verified: Utc::now(), enrolled_at: Utc::now(),
+        asset_id: sanitize(&req.asset_id),
+        display_name: sanitize(&req.display_name),
+        asset_kind: sanitize(&req.asset_kind),
+        host_name: sanitize(&req.host_name),
+        status: "pending".into(),
+        integrity_hash: req.integrity_hash,
+        last_verified: Utc::now(),
+        enrolled_at: Utc::now(),
         policy_id: req.policy_id.or(Some("default-policy".into())),
         tenant_id: tenant.clone(),
     };
-    db::insert_asset(&state.db, &record).await
+    db::insert_asset(&state.db, &record)
+        .await
         .map_err(|e| api_error(StatusCode::CONFLICT, &format!("{}", e)))?;
     Ok((StatusCode::CREATED, Json(record)))
 }
 
-async fn verify_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
-                      Path(id): Path<String>, Json(body): Json<HashMap<String, String>>)
-    -> Result<Json<AssetRecord>, (StatusCode, Json<ErrorResponse>)>
-{
+async fn verify_asset(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Path(id): Path<String>,
+    Json(body): Json<HashMap<String, String>>,
+) -> Result<Json<AssetRecord>, (StatusCode, Json<ErrorResponse>)> {
     let tenant = claims.tenant.clone();
-    let mut asset = db::get_asset(&state.db, &tenant, &id).await
+    let mut asset = db::get_asset(&state.db, &tenant, &id)
+        .await
         .ok_or_else(|| api_error(StatusCode::NOT_FOUND, "Asset not found"))?;
 
     let provided_hash = body
@@ -303,42 +417,68 @@ async fn verify_asset(State(state): State<AppState>, Extension(claims): Extensio
         "healthy".into()
     } else {
         let alert = AlertRecord {
-            alert_id: Uuid::new_v4().to_string(), severity: "critical".into(),
-            asset_id: id.clone(), message: format!("Integrity failure: {}", asset.display_name),
-            timestamp: Utc::now(), acknowledged: false, tenant_id: tenant.clone(),
+            alert_id: Uuid::new_v4().to_string(),
+            severity: "critical".into(),
+            asset_id: id.clone(),
+            message: format!("Integrity failure: {}", asset.display_name),
+            timestamp: Utc::now(),
+            acknowledged: false,
+            tenant_id: tenant.clone(),
         };
         let _ = db::insert_alert(&state.db, &alert).await;
         "tampered".into()
     };
-    db::update_asset_status(&state.db, &tenant, &id, &asset.status, asset.last_verified).await
+    db::update_asset_status(&state.db, &tenant, &id, &asset.status, asset.last_verified)
+        .await
         .map_err(|_| api_error(StatusCode::INTERNAL_SERVER_ERROR, "Update failed"))?;
     Ok(Json(asset))
 }
 
-async fn delete_asset(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>, Path(id): Path<String>)
-    -> Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)>
-{
+async fn delete_asset(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<ErrorResponse>)> {
     let tenant = claims.tenant;
-    db::delete_asset(&state.db, &tenant, &id).await
+    db::delete_asset(&state.db, &tenant, &id)
+        .await
         .map_err(|_| api_error(StatusCode::NOT_FOUND, "Asset not found"))?;
     Ok(Json(serde_json::json!({"deleted": id})))
 }
 
-async fn list_policies(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>) -> Json<Vec<PolicyRecord>> {
+async fn list_policies(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+) -> Json<Vec<PolicyRecord>> {
     let tenant = claims.tenant;
-    let policies = db::list_policies(&state.db, &tenant).await.unwrap_or_default();
+    let policies = db::list_policies(&state.db, &tenant)
+        .await
+        .unwrap_or_default();
     Json(policies)
 }
 
-async fn create_policy(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
-                       Json(body): Json<HashMap<String, String>>) -> Result<(StatusCode, Json<PolicyRecord>), (StatusCode, Json<ErrorResponse>)> {
+async fn create_policy(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Json(body): Json<HashMap<String, String>>,
+) -> Result<(StatusCode, Json<PolicyRecord>), (StatusCode, Json<ErrorResponse>)> {
     let tenant = claims.tenant;
-    let pid = body.get("policy_id").cloned().unwrap_or_else(|| Uuid::new_v4().to_string());
+    let pid = body
+        .get("policy_id")
+        .cloned()
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
     let policy = PolicyRecord {
-        policy_id: pid.clone(), name: body.get("name").cloned().unwrap_or_else(|| "Unnamed".into()),
-        version: 1, enforcement_mode: "protected-scope".into(), tenant_id: tenant,
+        policy_id: pid.clone(),
+        name: body
+            .get("name")
+            .cloned()
+            .unwrap_or_else(|| "Unnamed".into()),
+        version: 1,
+        enforcement_mode: "protected-scope".into(),
+        tenant_id: tenant,
     };
-    db::insert_policy(&state.db, &policy).await
+    db::insert_policy(&state.db, &policy)
+        .await
         .map_err(|e| api_error(StatusCode::CONFLICT, &format!("{}", e)))?;
     Ok((StatusCode::CREATED, Json(policy)))
 }
@@ -348,39 +488,65 @@ async fn list_nodes(State(state): State<AppState>) -> Json<Vec<NodeRecord>> {
     Json(nodes)
 }
 
-async fn register_node(State(state): State<AppState>, Json(body): Json<HashMap<String, String>>)
-    -> Result<(StatusCode, Json<NodeRecord>), (StatusCode, Json<ErrorResponse>)>
-{
-    let nid = body.get("node_id").cloned().unwrap_or_else(|| Uuid::new_v4().to_string());
+async fn register_node(
+    State(state): State<AppState>,
+    Json(body): Json<HashMap<String, String>>,
+) -> Result<(StatusCode, Json<NodeRecord>), (StatusCode, Json<ErrorResponse>)> {
+    let nid = body
+        .get("node_id")
+        .cloned()
+        .unwrap_or_else(|| Uuid::new_v4().to_string());
     let node = NodeRecord {
-        node_id: nid.clone(), host_name: body.get("host_name").cloned().unwrap_or_else(|| "unknown".into()),
-        platform: body.get("platform").cloned().unwrap_or_else(|| "linux".into()),
-        status: "online".into(), last_seen: Utc::now(), asset_count: 0,
+        node_id: nid.clone(),
+        host_name: body
+            .get("host_name")
+            .cloned()
+            .unwrap_or_else(|| "unknown".into()),
+        platform: body
+            .get("platform")
+            .cloned()
+            .unwrap_or_else(|| "linux".into()),
+        status: "online".into(),
+        last_seen: Utc::now(),
+        asset_count: 0,
     };
-    db::insert_node(&state.db, &node).await
+    db::insert_node(&state.db, &node)
+        .await
         .map_err(|e| api_error(StatusCode::CONFLICT, &format!("{}", e)))?;
     Ok((StatusCode::CREATED, Json(node)))
 }
 
-async fn list_alerts(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
-                     Query(p): Query<PaginationParams>) -> Json<Vec<AlertRecord>> {
+async fn list_alerts(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Query(p): Query<PaginationParams>,
+) -> Json<Vec<AlertRecord>> {
     let tenant = claims.tenant;
     let limit = p.limit.unwrap_or(100);
-    let alerts = db::list_alerts(&state.db, &tenant, limit).await.unwrap_or_default();
+    let alerts = db::list_alerts(&state.db, &tenant, limit)
+        .await
+        .unwrap_or_default();
     Json(alerts)
 }
 
-async fn acknowledge_alert(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
-                           Path(id): Path<String>) -> Result<Json<AlertRecord>, (StatusCode, Json<ErrorResponse>)> {
+async fn acknowledge_alert(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Path(id): Path<String>,
+) -> Result<Json<AlertRecord>, (StatusCode, Json<ErrorResponse>)> {
     let tenant = claims.tenant;
-    db::acknowledge_alert(&state.db, &tenant, &id).await
+    db::acknowledge_alert(&state.db, &tenant, &id)
+        .await
         .map_err(|_| api_error(StatusCode::NOT_FOUND, "Alert not found"))
         .map(Json)
 }
 
 // Auth handlers
-async fn login(Json(creds): Json<auth::LoginRequest>) -> Result<Json<auth::TokenResponse>, (StatusCode, Json<ErrorResponse>)> {
-    auth::login(&creds).map(Json)
+async fn login(
+    Json(creds): Json<auth::LoginRequest>,
+) -> Result<Json<auth::TokenResponse>, (StatusCode, Json<ErrorResponse>)> {
+    auth::login(&creds)
+        .map(Json)
         .map_err(|e| api_error(StatusCode::UNAUTHORIZED, &e))
 }
 
@@ -392,10 +558,11 @@ struct SiemExportParams {
 
 /// Exports recent integrity alerts as SIEM events in the requested format.
 /// `?format=` accepts: splunk_hec, elastic, sentinel, syslog, ndjson (default).
-async fn siem_export(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
-                     Query(p): Query<SiemExportParams>)
-    -> Result<axum::response::Response, (StatusCode, Json<ErrorResponse>)>
-{
+async fn siem_export(
+    State(state): State<AppState>,
+    Extension(claims): Extension<auth::Claims>,
+    Query(p): Query<SiemExportParams>,
+) -> Result<axum::response::Response, (StatusCode, Json<ErrorResponse>)> {
     let fmt = match p.format.as_deref().unwrap_or("ndjson") {
         "splunk_hec" | "splunk" => siem::SiemFormat::SplunkHec,
         "elastic" | "ecs" => siem::SiemFormat::ElasticEcs,
@@ -408,32 +575,45 @@ async fn siem_export(State(state): State<AppState>, Extension(claims): Extension
 
     let tenant = claims.tenant;
     let limit = p.limit.unwrap_or(500).clamp(1, 5000);
-    let alerts = db::list_alerts(&state.db, &tenant, limit).await.unwrap_or_default();
+    let alerts = db::list_alerts(&state.db, &tenant, limit)
+        .await
+        .unwrap_or_default();
 
     // Resolve host names for the distinct assets referenced by the alerts.
     let mut host_names: HashMap<String, String> = HashMap::new();
-    for asset_id in alerts.iter().map(|a| a.asset_id.clone()).collect::<std::collections::HashSet<_>>() {
+    for asset_id in alerts
+        .iter()
+        .map(|a| a.asset_id.clone())
+        .collect::<std::collections::HashSet<_>>()
+    {
         if let Some(asset) = db::get_asset(&state.db, &tenant, &asset_id).await {
             host_names.insert(asset_id, asset.host_name);
         }
     }
 
-    let events: Vec<siem::DfimSiemEvent> = alerts.into_iter().map(|a| siem::DfimSiemEvent {
-        event_id: a.alert_id,
-        event_type: "dfim.integrity.alert".into(),
-        severity: a.severity,
-        asset_id: a.asset_id.clone(),
-        message: a.message,
-        host_name: host_names.get(&a.asset_id).cloned().unwrap_or_default(),
-        timestamp: a.timestamp,
-        outcome: if a.acknowledged { "acknowledged".into() } else { "open".into() },
-        merkle_root: None,
-        tampered_blocks: None,
-        fec_corrected: None,
-        rollback_counter: None,
-        attestation_verified: None,
-        enforcement_action: None,
-    }).collect();
+    let events: Vec<siem::DfimSiemEvent> = alerts
+        .into_iter()
+        .map(|a| siem::DfimSiemEvent {
+            event_id: a.alert_id,
+            event_type: "dfim.integrity.alert".into(),
+            severity: a.severity,
+            asset_id: a.asset_id.clone(),
+            message: a.message,
+            host_name: host_names.get(&a.asset_id).cloned().unwrap_or_default(),
+            timestamp: a.timestamp,
+            outcome: if a.acknowledged {
+                "acknowledged".into()
+            } else {
+                "open".into()
+            },
+            merkle_root: None,
+            tampered_blocks: None,
+            fec_corrected: None,
+            rollback_counter: None,
+            attestation_verified: None,
+            enforcement_action: None,
+        })
+        .collect();
 
     let serializer = siem::get_serializer(fmt);
     let body = siem::format_batch(serializer.as_ref(), &events);
@@ -470,7 +650,10 @@ fn make_router(state: AppState) -> Router {
         .layer(RequestBodyLimitLayer::new(10 * 1024 * 1024))
         .layer(cors)
         .layer(TraceLayer::new_for_http())
-        .layer(middleware::from_fn_with_state(state.clone(), guard_middleware))
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            guard_middleware,
+        ))
         .with_state(state)
 }
 
@@ -483,18 +666,22 @@ async fn main() {
     // Structured JSON logging to file
     std::fs::create_dir_all("/var/log/dfim").ok();
     let log_file = std::fs::OpenOptions::new()
-        .create(true).append(true)
+        .create(true)
+        .append(true)
         .open("/var/log/dfim/dfim-api.log")
         .unwrap_or_else(|_| {
             eprintln!("Cannot open log file, logging to stderr");
             std::fs::File::create("/tmp/dfim-api.log").unwrap()
         });
-    fmt().with_writer(std::sync::Mutex::new(log_file))
+    fmt()
+        .with_writer(std::sync::Mutex::new(log_file))
         .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
         .json()
         .init();
 
-    tracing::info!("DFIM Phase 5 — Production API with PostgreSQL + JWT Auth + Rate Limiting + Audit");
+    tracing::info!(
+        "DFIM Phase 5 — Production API with PostgreSQL + JWT Auth + Rate Limiting + Audit"
+    );
 
     let state = AppState::new().await;
     let addr = std::env::var("DFIM_API_BIND").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
@@ -506,11 +693,23 @@ async fn main() {
     tracing::info!("PostgreSQL: connected");
     tracing::info!("Auth: JWT enforced (401 without token)");
     tracing::info!("Rate Limiting: ACTIVE");
-    tracing::info!("TLS: {}", if use_tls { "ENABLED" } else { "DISABLED — run scripts/gen_tls.sh" });
+    tracing::info!(
+        "TLS: {}",
+        if use_tls {
+            "ENABLED"
+        } else {
+            "DISABLED — run scripts/gen_tls.sh"
+        }
+    );
     tracing::info!("Audit log: /var/log/dfim/audit.jsonl");
     tracing::info!("Metrics: /metrics");
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     let app = make_router(state);
-    axum::serve(listener, app.into_make_service_with_connect_info::<std::net::SocketAddr>()).await.unwrap();
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await
+    .unwrap();
 }

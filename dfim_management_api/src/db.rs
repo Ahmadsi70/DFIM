@@ -10,8 +10,9 @@ pub type DbPool = PgPool;
 ///
 /// `DATABASE_URL` is required; no fallback credentials are embedded.
 pub async fn connect() -> Result<DbPool, sqlx::Error> {
-    let db_url = env::var("DATABASE_URL")
-        .map_err(|_| sqlx::Error::Configuration("DATABASE_URL environment variable is not set".into()))?;
+    let db_url = env::var("DATABASE_URL").map_err(|_| {
+        sqlx::Error::Configuration("DATABASE_URL environment variable is not set".into())
+    })?;
 
     PgPoolOptions::new()
         .max_connections(50)
@@ -34,8 +35,10 @@ pub async fn migrate(pool: &DbPool) -> Result<(), sqlx::Error> {
             enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             policy_id TEXT,
             tenant_id TEXT NOT NULL DEFAULT 'default'
-        )"
-    ).execute(pool).await?;
+        )",
+    )
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS policies (
@@ -45,8 +48,10 @@ pub async fn migrate(pool: &DbPool) -> Result<(), sqlx::Error> {
             enforcement_mode TEXT NOT NULL DEFAULT 'protected-scope',
             tenant_id TEXT NOT NULL DEFAULT 'default',
             PRIMARY KEY (policy_id, tenant_id)
-        )"
-    ).execute(pool).await?;
+        )",
+    )
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS nodes (
@@ -56,8 +61,10 @@ pub async fn migrate(pool: &DbPool) -> Result<(), sqlx::Error> {
             status TEXT NOT NULL DEFAULT 'online',
             last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             asset_count INT NOT NULL DEFAULT 0
-        )"
-    ).execute(pool).await?;
+        )",
+    )
+    .execute(pool)
+    .await?;
 
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS alerts (
@@ -68,17 +75,38 @@ pub async fn migrate(pool: &DbPool) -> Result<(), sqlx::Error> {
             timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW(),
             acknowledged BOOLEAN NOT NULL DEFAULT false,
             tenant_id TEXT NOT NULL DEFAULT 'default'
-        )"
-    ).execute(pool).await?;
+        )",
+    )
+    .execute(pool)
+    .await?;
 
     // Seed demo data
     let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM assets WHERE tenant_id = 'default'")
-        .fetch_one(pool).await?;
+        .fetch_one(pool)
+        .await?;
     if count.0 == 0 {
         let demo = [
-            ("sha256:bootmgfw", "bootmgfw.efi", "WindowsBootManager", "node-01", "healthy"),
-            ("sha256:vmlinuz", "vmlinuz", "LinuxKernel", "node-02", "healthy"),
-            ("sha256:systemd", "systemd", "InitSystem", "node-03", "healthy"),
+            (
+                "sha256:bootmgfw",
+                "bootmgfw.efi",
+                "WindowsBootManager",
+                "node-01",
+                "healthy",
+            ),
+            (
+                "sha256:vmlinuz",
+                "vmlinuz",
+                "LinuxKernel",
+                "node-02",
+                "healthy",
+            ),
+            (
+                "sha256:systemd",
+                "systemd",
+                "InitSystem",
+                "node-03",
+                "healthy",
+            ),
             ("sha256:sshd", "sshd", "SSHDaemon", "node-01", "healthy"),
         ];
         for (id, name, kind, host, status) in demo {
@@ -98,12 +126,21 @@ pub async fn migrate(pool: &DbPool) -> Result<(), sqlx::Error> {
 
 pub async fn count_assets(pool: &DbPool, tenant: &str) -> Result<Option<i64>, sqlx::Error> {
     let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM assets WHERE tenant_id = $1")
-        .bind(tenant).fetch_one(pool).await?;
+        .bind(tenant)
+        .fetch_one(pool)
+        .await?;
     Ok(Some(row.0))
 }
 
-pub async fn list_assets(pool: &DbPool, tenant: &str, limit: i64, offset: i64,
-                          status: Option<&str>, host: Option<&str>, kind: Option<&str>) -> Result<Vec<super::AssetRecord>, sqlx::Error> {
+pub async fn list_assets(
+    pool: &DbPool,
+    tenant: &str,
+    limit: i64,
+    offset: i64,
+    status: Option<&str>,
+    host: Option<&str>,
+    kind: Option<&str>,
+) -> Result<Vec<super::AssetRecord>, sqlx::Error> {
     let rows = match (status, host, kind) {
         (Some(s), Some(h), Some(k)) => {
             sqlx::query_as("SELECT asset_id,display_name,asset_kind,host_name,status,integrity_hash,last_verified,enrolled_at,policy_id,tenant_id FROM assets WHERE tenant_id=$1 AND status=$2 AND host_name=$3 AND asset_kind=$4 ORDER BY last_verified DESC")
@@ -127,7 +164,11 @@ pub async fn list_assets(pool: &DbPool, tenant: &str, limit: i64, offset: i64,
         }
     };
     let all = rows.fetch_all(pool).await?;
-    let page: Vec<_> = all.into_iter().skip(offset as usize).take(limit as usize).collect();
+    let page: Vec<_> = all
+        .into_iter()
+        .skip(offset as usize)
+        .take(limit as usize)
+        .collect();
     Ok(page)
 }
 
@@ -146,28 +187,52 @@ pub async fn insert_asset(pool: &DbPool, a: &super::AssetRecord) -> Result<(), s
     Ok(())
 }
 
-pub async fn update_asset_status(pool: &DbPool, tenant: &str, id: &str, status: &str, verified: DateTime<Utc>) -> Result<(), sqlx::Error> {
-    sqlx::query("UPDATE assets SET status = $1, last_verified = $2 WHERE asset_id = $3 AND tenant_id = $4")
-        .bind(status).bind(verified).bind(id).bind(tenant)
-        .execute(pool).await?;
+pub async fn update_asset_status(
+    pool: &DbPool,
+    tenant: &str,
+    id: &str,
+    status: &str,
+    verified: DateTime<Utc>,
+) -> Result<(), sqlx::Error> {
+    sqlx::query(
+        "UPDATE assets SET status = $1, last_verified = $2 WHERE asset_id = $3 AND tenant_id = $4",
+    )
+    .bind(status)
+    .bind(verified)
+    .bind(id)
+    .bind(tenant)
+    .execute(pool)
+    .await?;
     Ok(())
 }
 
 pub async fn delete_asset(pool: &DbPool, tenant: &str, id: &str) -> Result<(), sqlx::Error> {
     let r = sqlx::query("DELETE FROM assets WHERE asset_id = $1 AND tenant_id = $2")
-        .bind(id).bind(tenant).execute(pool).await?;
-    if r.rows_affected() == 0 { Err(sqlx::Error::RowNotFound) } else { Ok(()) }
+        .bind(id)
+        .bind(tenant)
+        .execute(pool)
+        .await?;
+    if r.rows_affected() == 0 {
+        Err(sqlx::Error::RowNotFound)
+    } else {
+        Ok(())
+    }
 }
 
 // ── Policies ──
 
 pub async fn count_policies(pool: &DbPool, tenant: &str) -> Result<Option<i64>, sqlx::Error> {
     let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM policies WHERE tenant_id = $1")
-        .bind(tenant).fetch_one(pool).await?;
+        .bind(tenant)
+        .fetch_one(pool)
+        .await?;
     Ok(Some(row.0))
 }
 
-pub async fn list_policies(pool: &DbPool, tenant: &str) -> Result<Vec<super::PolicyRecord>, sqlx::Error> {
+pub async fn list_policies(
+    pool: &DbPool,
+    tenant: &str,
+) -> Result<Vec<super::PolicyRecord>, sqlx::Error> {
     sqlx::query_as("SELECT policy_id, name, version, enforcement_mode, tenant_id FROM policies WHERE tenant_id = $1")
         .bind(tenant).fetch_all(pool).await
 }
@@ -182,7 +247,9 @@ pub async fn insert_policy(pool: &DbPool, p: &super::PolicyRecord) -> Result<(),
 // ── Nodes ──
 
 pub async fn count_nodes(pool: &DbPool) -> Result<Option<i64>, sqlx::Error> {
-    let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM nodes").fetch_one(pool).await?;
+    let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM nodes")
+        .fetch_one(pool)
+        .await?;
     Ok(Some(row.0))
 }
 
@@ -202,11 +269,17 @@ pub async fn insert_node(pool: &DbPool, n: &super::NodeRecord) -> Result<(), sql
 
 pub async fn count_alerts(pool: &DbPool, tenant: &str) -> Result<Option<i64>, sqlx::Error> {
     let row: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM alerts WHERE tenant_id = $1")
-        .bind(tenant).fetch_one(pool).await?;
+        .bind(tenant)
+        .fetch_one(pool)
+        .await?;
     Ok(Some(row.0))
 }
 
-pub async fn list_alerts(pool: &DbPool, tenant: &str, limit: i64) -> Result<Vec<super::AlertRecord>, sqlx::Error> {
+pub async fn list_alerts(
+    pool: &DbPool,
+    tenant: &str,
+    limit: i64,
+) -> Result<Vec<super::AlertRecord>, sqlx::Error> {
     sqlx::query_as("SELECT alert_id, severity, asset_id, message, timestamp, acknowledged, tenant_id FROM alerts WHERE tenant_id = $1 ORDER BY timestamp DESC LIMIT $2")
         .bind(tenant).bind(limit).fetch_all(pool).await
 }
@@ -218,9 +291,16 @@ pub async fn insert_alert(pool: &DbPool, a: &super::AlertRecord) -> Result<(), s
     Ok(())
 }
 
-pub async fn acknowledge_alert(pool: &DbPool, tenant: &str, id: &str) -> Result<super::AlertRecord, sqlx::Error> {
+pub async fn acknowledge_alert(
+    pool: &DbPool,
+    tenant: &str,
+    id: &str,
+) -> Result<super::AlertRecord, sqlx::Error> {
     sqlx::query("UPDATE alerts SET acknowledged = true WHERE alert_id = $1 AND tenant_id = $2")
-        .bind(id).bind(tenant).execute(pool).await?;
+        .bind(id)
+        .bind(tenant)
+        .execute(pool)
+        .await?;
     sqlx::query_as("SELECT alert_id, severity, asset_id, message, timestamp, acknowledged, tenant_id FROM alerts WHERE alert_id = $1 AND tenant_id = $2")
         .bind(id).bind(tenant).fetch_one(pool).await
 }
@@ -229,9 +309,14 @@ pub async fn acknowledge_alert(pool: &DbPool, tenant: &str, id: &str) -> Result<
 
 #[derive(Debug, Default)]
 pub struct FleetSummaryRaw {
-    pub total_assets: i64, pub healthy: i64, pub tampered: i64,
-    pub blocked: i64, pub pending: i64,
-    pub total_nodes: i64, pub total_policies: i64, pub active_alerts: i64,
+    pub total_assets: i64,
+    pub healthy: i64,
+    pub tampered: i64,
+    pub blocked: i64,
+    pub pending: i64,
+    pub total_nodes: i64,
+    pub total_policies: i64,
+    pub active_alerts: i64,
 }
 
 pub async fn fleet_summary(pool: &DbPool, tenant: &str) -> Result<FleetSummaryRaw, sqlx::Error> {

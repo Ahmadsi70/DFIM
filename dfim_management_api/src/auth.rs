@@ -6,11 +6,11 @@
 //!   - Tenant context carried in the JWT claims (not client-controlled headers)
 //!   - Credentials supplied exclusively via environment (no hardcoded secrets)
 
-use serde::{Deserialize, Serialize};
 use hmac::{Hmac, Mac};
+use serde::{Deserialize, Serialize};
 use sha2::Sha256;
-use subtle::ConstantTimeEq;
 use std::time::{SystemTime, UNIX_EPOCH};
+use subtle::ConstantTimeEq;
 
 type HmacSha256 = Hmac<Sha256>;
 
@@ -53,11 +53,11 @@ fn jwt_secret() -> Vec<u8> {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,       // username
-    pub tenant: String,     // tenant_id
-    pub role: String,       // admin | operator | readonly
-    pub exp: u64,           // expiry timestamp
-    pub iat: u64,           // issued at
+    pub sub: String,    // username
+    pub tenant: String, // tenant_id
+    pub role: String,   // admin | operator | readonly
+    pub exp: u64,       // expiry timestamp
+    pub iat: u64,       // issued at
 }
 
 #[derive(Debug, Deserialize)]
@@ -89,30 +89,44 @@ fn configured_accounts() -> Vec<(String, String, UserIdentity)> {
 
     if let (Ok(user), Ok(pass)) = (env::var("DFIM_ADMIN_USER"), env::var("DFIM_ADMIN_PASSWORD")) {
         if !user.is_empty() && !pass.is_empty() {
-            accounts.push((user, pass, UserIdentity {
-                role: "admin".into(),
-                tenant: tenant_from_env("DFIM_ADMIN_TENANT"),
-            }));
+            accounts.push((
+                user,
+                pass,
+                UserIdentity {
+                    role: "admin".into(),
+                    tenant: tenant_from_env("DFIM_ADMIN_TENANT"),
+                },
+            ));
         }
     }
-    if let (Ok(user), Ok(pass)) =
-        (env::var("DFIM_OPERATOR_USER"), env::var("DFIM_OPERATOR_PASSWORD"))
-    {
+    if let (Ok(user), Ok(pass)) = (
+        env::var("DFIM_OPERATOR_USER"),
+        env::var("DFIM_OPERATOR_PASSWORD"),
+    ) {
         if !user.is_empty() && !pass.is_empty() {
-            accounts.push((user, pass, UserIdentity {
-                role: "operator".into(),
-                tenant: tenant_from_env("DFIM_OPERATOR_TENANT"),
-            }));
+            accounts.push((
+                user,
+                pass,
+                UserIdentity {
+                    role: "operator".into(),
+                    tenant: tenant_from_env("DFIM_OPERATOR_TENANT"),
+                },
+            ));
         }
     }
-    if let (Ok(user), Ok(pass)) =
-        (env::var("DFIM_READONLY_USER"), env::var("DFIM_READONLY_PASSWORD"))
-    {
+    if let (Ok(user), Ok(pass)) = (
+        env::var("DFIM_READONLY_USER"),
+        env::var("DFIM_READONLY_PASSWORD"),
+    ) {
         if !user.is_empty() && !pass.is_empty() {
-            accounts.push((user, pass, UserIdentity {
-                role: "readonly".into(),
-                tenant: tenant_from_env("DFIM_READONLY_TENANT"),
-            }));
+            accounts.push((
+                user,
+                pass,
+                UserIdentity {
+                    role: "readonly".into(),
+                    tenant: tenant_from_env("DFIM_READONLY_TENANT"),
+                },
+            ));
         }
     }
 
@@ -132,8 +146,10 @@ fn resolve_identity(
     // on the username) so login timing does not leak whether an account exists.
     let mut matched: Option<UserIdentity> = None;
     for (u, p, identity) in accounts {
-        let user_eq = u.len() == username.len() && bool::from(u.as_bytes().ct_eq(username.as_bytes()));
-        let pass_eq = p.len() == password.len() && bool::from(p.as_bytes().ct_eq(password.as_bytes()));
+        let user_eq =
+            u.len() == username.len() && bool::from(u.as_bytes().ct_eq(username.as_bytes()));
+        let pass_eq =
+            p.len() == password.len() && bool::from(p.as_bytes().ct_eq(password.as_bytes()));
         if user_eq && pass_eq {
             matched = Some(identity.clone());
         }
@@ -148,7 +164,10 @@ pub fn validate_credentials(username: &str, password: &str) -> Option<UserIdenti
 
 /// Issue a JWT token
 pub fn issue_token(username: &str, role: &str, tenant: &str) -> Result<String, String> {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs();
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_secs();
 
     let claims = Claims {
         sub: username.to_string(),
@@ -192,7 +211,10 @@ pub fn verify_jwt(token: &str) -> Result<Claims, String> {
 
     let claims: Claims = base64_decode_json(parts[1])?;
 
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| e.to_string())?.as_secs();
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| e.to_string())?
+        .as_secs();
     if claims.exp < now {
         return Err("Token expired".into());
     }
@@ -202,8 +224,8 @@ pub fn verify_jwt(token: &str) -> Result<Claims, String> {
 
 /// Login handler
 pub fn login(req: &LoginRequest) -> Result<TokenResponse, String> {
-    let identity =
-        validate_credentials(&req.username, &req.password).ok_or_else(|| "Invalid credentials".to_string())?;
+    let identity = validate_credentials(&req.username, &req.password)
+        .ok_or_else(|| "Invalid credentials".to_string())?;
 
     let token = issue_token(&req.username, &identity.role, &identity.tenant)?;
 
@@ -243,7 +265,10 @@ mod tests {
     use super::*;
 
     fn admin_identity() -> UserIdentity {
-        UserIdentity { role: "admin".into(), tenant: "default".into() }
+        UserIdentity {
+            role: "admin".into(),
+            tenant: "default".into(),
+        }
     }
 
     #[test]
@@ -258,8 +283,17 @@ mod tests {
     #[test]
     fn test_expired_token_rejected() {
         // Create token with past expiry
-        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-        let claims = Claims { sub: "test".into(), tenant: "default".into(), role: "admin".into(), exp: now - 1, iat: now - 100 };
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let claims = Claims {
+            sub: "test".into(),
+            tenant: "default".into(),
+            role: "admin".into(),
+            exp: now - 1,
+            iat: now - 100,
+        };
         let payload = base64_encode_json(&claims);
         let header = base64_encode_json(&serde_json::json!({"alg":"HS256","typ":"JWT"}));
         let mut mac = HmacSha256::new_from_slice(&jwt_secret()).unwrap();
@@ -272,8 +306,22 @@ mod tests {
     #[test]
     fn test_resolve_identity_matches_and_isolates() {
         let accounts = vec![
-            ("acme_admin".to_string(), "acme_pass".to_string(), UserIdentity { role: "admin".into(), tenant: "acme-corp".into() }),
-            ("megabank_op".to_string(), "bank_pass".to_string(), UserIdentity { role: "operator".into(), tenant: "megabank".into() }),
+            (
+                "acme_admin".to_string(),
+                "acme_pass".to_string(),
+                UserIdentity {
+                    role: "admin".into(),
+                    tenant: "acme-corp".into(),
+                },
+            ),
+            (
+                "megabank_op".to_string(),
+                "bank_pass".to_string(),
+                UserIdentity {
+                    role: "operator".into(),
+                    tenant: "megabank".into(),
+                },
+            ),
         ];
         let a = resolve_identity(&accounts, "acme_admin", "acme_pass").unwrap();
         assert_eq!(a.role, "admin");
@@ -285,16 +333,17 @@ mod tests {
 
     #[test]
     fn test_resolve_identity_rejects_wrong_password() {
-        let accounts = vec![
-            ("admin".to_string(), "secret".to_string(), admin_identity()),
-        ];
+        let accounts = vec![("admin".to_string(), "secret".to_string(), admin_identity())];
         assert!(resolve_identity(&accounts, "admin", "wrong").is_none());
     }
 
     #[test]
     fn test_login_requires_configured_account() {
         // Without env-configured accounts, login must fail (fail closed).
-        let resp = login(&LoginRequest { username: "admin".into(), password: "REDACTED".into() });
+        let resp = login(&LoginRequest {
+            username: "admin".into(),
+            password: "REDACTED".into(),
+        });
         assert!(resp.is_err());
     }
 }
