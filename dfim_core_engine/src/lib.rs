@@ -62,7 +62,7 @@ pub use digest::{
     digest_to_hex, manifest_digest, sha256_digest, sha256_digest_chunked, SHA256_LEN,
 };
 #[cfg(feature = "bpf")]
-pub use digest::{digest_to_hex, SHA256_LEN};
+pub use digest::{digest_to_hex, sha256_digest, SHA256_LEN};
 pub use error::{DfimError, DfimResult};
 pub use hamming::{
     codeword_bit_length, decode_bits, decode_block_into, decode_block_into_strict, encode_bits,
@@ -71,7 +71,6 @@ pub use hamming::{
 #[cfg(feature = "alloc")]
 pub use hamming::{decode_block, encode_block};
 pub use integrity_gate::{assert_block_index, assert_image_bounds, assert_target_path};
-#[cfg(not(feature = "bpf"))]
 pub use merkle::{leaf_hash, parent_hash};
 #[cfg(feature = "alloc")]
 pub use merkle::{verify_proof, MerkleProof, MerkleTree};
