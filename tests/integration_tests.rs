@@ -75,7 +75,7 @@ fn core_uefi_block_count_validation() {
 
 #[test]
 fn core_uefi_image_size_boundary() {
-    let max_size = MAX_BOOT_BLOCKS as usize * DFIM_BLOCK_SIZE;
+    let max_size = MAX_BOOT_BLOCKS * DFIM_BLOCK_SIZE;
     assert!(max_size == 262144, "Max image size must be 262144 bytes (256 KiB)");
 
     // Boundary: valid image
