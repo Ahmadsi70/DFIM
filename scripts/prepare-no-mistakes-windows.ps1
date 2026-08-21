@@ -60,7 +60,11 @@ if ($LASTEXITCODE -ne 0) { Write-Warning 'Unable to read git remotes. Ensure thi
 
 # Ensure no secret is accidentally committed - copy key file into place and add to .gitignore
 if (Test-Path $KeyFilePath) {
-    $env:DFIM_CRYPTO_KEY = Get-Content -Raw -Path $KeyFilePath
+    $keyValue = (Get-Content -Raw -Path $KeyFilePath).Trim()
+    if ($keyValue -notmatch '^[0-9a-fA-F]{64}$') {
+        Fail "DFIM_CRYPTO_KEY in $KeyFilePath is invalid: expected exactly 64 hexadecimal characters."
+    }
+    $env:DFIM_CRYPTO_KEY = $keyValue
     Write-Host "DFIM_CRYPTO_KEY loaded from $KeyFilePath (in-memory only)."
     # Make sure .gitignore contains the key file
     $gi = Join-Path $RepoPath '.gitignore'
