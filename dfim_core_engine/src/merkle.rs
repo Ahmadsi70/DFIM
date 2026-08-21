@@ -6,7 +6,6 @@
 //! - `|proof| = O(log N)`
 
 use crate::constants::SHA256_LEN;
-#[cfg(not(feature = "bpf"))]
 use crate::digest::sha256_digest;
 #[cfg(feature = "alloc")]
 use crate::error::{DfimError, DfimResult};
@@ -140,11 +139,27 @@ pub fn parent_hash(left: &[u8; SHA256_LEN], right: &[u8; SHA256_LEN]) -> [u8; SH
     sha256_digest(&buf)
 }
 
+/// BPF-safe parent hash using the map-backed workspace hash routine.
+#[inline]
+#[cfg(feature = "bpf")]
+pub fn parent_hash(left: &[u8; SHA256_LEN], right: &[u8; SHA256_LEN]) -> [u8; SHA256_LEN] {
+    let mut workspace = crate::bpf_sha256::Sha256Workspace::new();
+    crate::bpf_sha256::parent_hash(left, right, &mut workspace)
+}
+
 /// Leaf hash: `h_i = H(D_i)`.
 #[inline]
 #[cfg(not(feature = "bpf"))]
 pub fn leaf_hash(data: &[u8]) -> [u8; SHA256_LEN] {
     sha256_digest(data)
+}
+
+/// BPF-safe leaf hash using the kernel workspace hash routine.
+#[inline]
+#[cfg(feature = "bpf")]
+pub fn leaf_hash(data: &[u8]) -> [u8; SHA256_LEN] {
+    let mut workspace = crate::bpf_sha256::Sha256Workspace::new();
+    crate::bpf_sha256::sha256_digest(data, &mut workspace)
 }
 
 /// Verify membership proof against published root.

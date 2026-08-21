@@ -27,6 +27,13 @@ pub fn sha256_digest(data: &[u8]) -> [u8; SHA256_LEN] {
     digest
 }
 
+/// BPF-safe SHA-256 digest using the kernel workspace implementation.
+#[cfg(feature = "bpf")]
+pub fn sha256_digest(data: &[u8]) -> [u8; SHA256_LEN] {
+    let mut workspace = crate::bpf_sha256::Sha256Workspace::new();
+    crate::bpf_sha256::sha256_digest(data, &mut workspace)
+}
+
 /// SHA-256 digest over canonical UTF-8 manifest bytes.
 #[cfg(not(feature = "bpf"))]
 pub fn manifest_digest(canonical_utf8: &[u8]) -> DfimResult<[u8; SHA256_LEN]> {
