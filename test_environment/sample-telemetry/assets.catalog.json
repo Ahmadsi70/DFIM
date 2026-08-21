@@ -1,0 +1,16 @@
+{
+  "assets": {
+    "sha256:1111111111111111111111111111111111111111111111111111111111111111": {
+      "name": "Demo boot image (primary)",
+      "host": "lab-server-01"
+    },
+    "sha256:4444444444444444444444444444444444444444444444444444444444444444": {
+      "name": "Demo boot image (policy test)",
+      "host": "lab-server-02"
+    },
+    "sha256:d45d6ec9da788d800899b3872132807c3d19d0858e35453f7a891da84456e40a": {
+      "name": "Local install demo boot image",
+      "host": "this-workstation"
+    }
+  }
+}

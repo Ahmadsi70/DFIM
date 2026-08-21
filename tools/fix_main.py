@@ -1,0 +1,6 @@
+f = open("/workspace/dfim/dfim_management_api/src/main.rs")
+c = f.read()
+f.close()
+c = c.replace("AxumAxumPath: Path<String>", "Path(id): Path<String>")
+open("/workspace/dfim/dfim_management_api/src/main.rs","w").write(c)
+print("Fixed handler signatures")

@@ -1,0 +1,30 @@
+[package]
+name = "dfim-ebpf-user"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "DFIM eBPF user-space loader and manifest provisioner"
+publish = false
+
+[[bin]]
+name = "dfim-ebpf-user"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+aya = "0.13.1"
+aya-log = "0.2.1"
+clap = { version = "4.5", features = ["derive"] }
+dfim_core_engine = { workspace = true, features = ["linux-loader", "full"] }
+dfim_host_init = { workspace = true }
+dfim_windows_uefi = { workspace = true }
+env_logger = "0.11"
+libc = "0.2"
+log = "0.4"
+nix = { version = "0.29", features = ["fs"] }
+ctrlc = "3.4"
+
+[build-dependencies]
+anyhow = "1.0"
+cargo_metadata = "0.23"

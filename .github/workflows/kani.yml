@@ -1,0 +1,39 @@
+name: DFIM Kani Proofs
+
+on:
+  pull_request:
+  push:
+    branches: ["main", "master"]
+  schedule:
+    - cron: "23 5 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DFIM_CRYPTO_KEY: "ci-only-dfim-kani-key-material-2026"
+
+jobs:
+  prove:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        harness:
+          - proof_integrity_gates_memory_safe
+          - proof_image_bounds_rejects_above_64k
+          - proof_parse_block_stream_memory_safe
+          - proof_parse_uefi_variable_memory_safe
+          - proof_layer0_parsers_unified_memory_safe
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+
+      - name: Prove bounded harness
+        uses: model-checking/kani-github-action@f838096619a707b0f6b2118cf435eaccfa33e51f # v1.1
+        with:
+          kani-version: "0.67.0"
+          command: cargo
+          args: kani -p dfim_kani_proofs --harness ${{ matrix.harness }}

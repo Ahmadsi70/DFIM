@@ -1,0 +1,44 @@
+[workspace]
+resolver = "2"
+default-members = [
+    "dfim_core_engine",
+    "dfim_cli_provisioner",
+    "dfim_host_init",
+    "dfim_windows_uefi",
+    "dfim_management_api",
+    "dfim_plugin_sdk",
+]
+members = [
+    "dfim_core_engine",
+    "dfim_cli_provisioner",
+    "dfim_host_init",
+    "dfim_kani_proofs",
+    "dfim_linux_kernel/dfim-ebpf",
+    "dfim_linux_kernel/dfim-ebpf-user",
+    "dfim_windows_uefi",
+    "dfim_management_api",
+    "dfim_plugin_sdk",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["DFIM Engineering"]
+
+[workspace.dependencies]
+dfim_core_engine = { version = "0.1.0", path = "dfim_core_engine" }
+dfim_host_init = { version = "0.1.0", path = "dfim_host_init" }
+dfim_windows_uefi = { version = "0.1.0", path = "dfim_windows_uefi" }
+litcrypt = "0.4"
+litcrypt2_nostd = "0.1.0"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true

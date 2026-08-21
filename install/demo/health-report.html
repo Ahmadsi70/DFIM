@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>DFIM Integrity Health Report</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --warn: #f97316;
+      --ok: #22c55e;
+      --bad: #ef4444;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f8fafc;
+        --panel: #ffffff;
+        --text: #0f172a;
+        --muted: #64748b;
+      }
+    }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.55;
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 24px; }
+    h1 { margin: 0 0 8px; font-size: 1.8rem; }
+    h2 { margin-top: 0; font-size: 1.1rem; }
+    .meta { color: var(--muted); margin-bottom: 24px; }
+    .hero {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 6px solid var(--accent);
+    }
+    .hero.bad { border-left-color: var(--bad); }
+    .hero.ok { border-left-color: var(--ok); }
+    .hero.warn { border-left-color: var(--warn); }
+    .hero .headline { font-size: 1.25rem; font-weight: 700; margin-bottom: 8px; }
+    .hero .summary { font-size: 1rem; }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,.15);
+    }
+    .card .label { color: var(--muted); font-size: .85rem; }
+    .card .value { font-size: 1.8rem; font-weight: 700; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .bad { color: var(--bad); }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .panel {
+      background: var(--panel);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid rgba(148,163,184,.25); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; }
+    .badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: .82rem;
+      font-weight: 600;
+      background: rgba(148,163,184,.2);
+    }
+    .badge.ok { background: rgba(34,197,94,.18); color: var(--ok); }
+    .badge.warn { background: rgba(249,115,22,.18); color: var(--warn); }
+    .badge.bad { background: rgba(239,68,68,.18); color: var(--bad); }
+    .bar-row {
+      display: grid;
+      grid-template-columns: 140px 1fr 40px;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .bar-label { font-size: .85rem; }
+    .bar-track {
+      background: rgba(148,163,184,.2);
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #818cf8);
+    }
+    .bar-value { text-align: right; font-variant-numeric: tabular-nums; }
+    .muted { color: var(--muted); }
+    footer { margin-top: 32px; color: var(--muted); font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>DFIM Integrity Health Report</h1>
+    <p class="meta">Source: c:\Users\badri\DFIM\install\demo\audit.jsonl · Generated: 2026-07-12 14:46:28 UTC · Audit events: 2</p>
+
+    <section class="hero ok">
+      <div class="headline">All protected files healthy</div>
+      <p class="summary"><strong>Executive summary:</strong> All 1 protected file checked in this report are healthy and match the authorized versions recorded by your organization. This report covers only files explicitly enrolled in DFIM — it does not scan the entire computer and it is not an antivirus scan.</p>
+    </section>
+
+    <div class="cards">
+      <div class="card"><div class="label">Protected files</div><div class="value">1</div></div>
+      <div class="card"><div class="label">Healthy</div><div class="value ok">1</div></div>
+      <div class="card"><div class="label">Need attention</div><div class="value bad">0</div></div>
+      <div class="card"><div class="label">Checks recorded</div><div class="value">2</div></div>
+      <div class="card"><div class="label">Execution blocks</div><div class="value warn">0</div></div>
+      <div class="card"><div class="label">Recoveries</div><div class="value">0</div></div>
+    </div>
+
+    <section class="panel">
+      <h2>Protected files</h2>
+      <table>
+        <thead>
+          <tr><th>File</th><th>Status</th><th>What this means</th><th>Last checked</th><th>Suggested action</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Local install demo boot image</strong><br><span class="muted">this-workstation</span></td><td><span class="badge ok">Healthy</span></td><td>This file matches the authorized version recorded by your organization.</td><td>2026-07-12 13:50:07 UTC</td><td>No action required.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Activity by type (technical)</h2>
+        <div class="bar-row"><span class="bar-label">verify_v1</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">2</span></div>
+      </section>
+      <section class="panel">
+        <h2>Hourly activity (UTC)</h2>
+        <div class="bar-row"><span class="bar-label">2026-07-12 13:00</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">2</span></div>
+      </section>
+    </div>
+
+    <section class="panel">
+      <h2>Recent alerts (technical)</h2>
+      <table>
+        <thead>
+          <tr><th>Time</th><th>File</th><th>Event</th><th>Outcome</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>2026-07-12 13:50:06 UTC</td><td>Protected file (d45d6ec9da78…)</td><td>verify_v1</td><td>failure</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      This report covers only files explicitly enrolled in DFIM. It verifies integrity against authorized
+      baselines; it does not scan the entire computer and it is not an antivirus product. For live monitoring,
+      forward audit JSONL to your SOC or Grafana ops stack.
+    </footer>
+  </div>
+</body>
+</html>
