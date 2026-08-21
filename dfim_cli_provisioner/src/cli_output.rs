@@ -91,10 +91,7 @@ fn os_string_bytes(value: &std::ffi::OsStr) -> Vec<u8> {
 #[cfg(windows)]
 fn os_string_bytes(value: &std::ffi::OsStr) -> Vec<u8> {
     use std::os::windows::ffi::OsStrExt;
-    value
-        .encode_wide()
-        .flat_map(u16::to_le_bytes)
-        .collect()
+    value.encode_wide().flat_map(u16::to_le_bytes).collect()
 }
 
 #[cfg(not(any(unix, windows)))]
