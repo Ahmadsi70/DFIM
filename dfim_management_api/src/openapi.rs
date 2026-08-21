@@ -69,6 +69,15 @@ pub async fn openapi_spec() -> Json<serde_json::Value> {
             "/v1/alerts/{alert_id}/acknowledge": {
                 "post": { "summary": "Acknowledge alert", "tags": ["Alerts"], "parameters": [{ "name": "alert_id", "in": "path", "required": true, "schema": { "type": "string" } }], "responses": { "200": { "description": "OK" } } }
             },
+            "/v1/siem/export": {
+                "get": { "summary": "Export recent integrity alerts as SIEM events", "tags": ["SIEM"],
+                    "parameters": [
+                        { "name": "format", "in": "query", "schema": { "type": "string", "enum": ["ndjson", "splunk_hec", "elastic", "sentinel", "syslog"] }, "description": "Output format (default: ndjson)" },
+                        { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 5000 }, "description": "Max events to export (default: 500)" }
+                    ],
+                    "responses": { "200": { "description": "Serialized SIEM events; Content-Type varies by format" }, "400": { "description": "Unknown format" } }
+                }
+            },
             "/v1/telemetry": {
                 "get": { "summary": "Query telemetry", "tags": ["Telemetry"], "responses": { "200": { "description": "OK" } } }
             },
@@ -78,7 +87,8 @@ pub async fn openapi_spec() -> Json<serde_json::Value> {
         },
         "tags": [
             { "name": "Health" }, { "name": "Fleet" }, { "name": "Assets" },
-            { "name": "Policies" }, { "name": "Nodes" }, { "name": "Alerts" }, { "name": "Telemetry" }
+            { "name": "Policies" }, { "name": "Nodes" }, { "name": "Alerts" },
+            { "name": "SIEM" }, { "name": "Telemetry" }
         ],
         "security": [{ "ApiKeyAuth": [] }],
         "components": {

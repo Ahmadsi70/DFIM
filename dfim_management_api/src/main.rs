@@ -384,6 +384,62 @@ async fn login(Json(creds): Json<auth::LoginRequest>) -> Result<Json<auth::Token
         .map_err(|e| api_error(StatusCode::UNAUTHORIZED, &e))
 }
 
+#[derive(Debug, Deserialize)]
+struct SiemExportParams {
+    format: Option<String>,
+    limit: Option<i64>,
+}
+
+/// Exports recent integrity alerts as SIEM events in the requested format.
+/// `?format=` accepts: splunk_hec, elastic, sentinel, syslog, ndjson (default).
+async fn siem_export(State(state): State<AppState>, Extension(claims): Extension<auth::Claims>,
+                     Query(p): Query<SiemExportParams>)
+    -> Result<axum::response::Response, (StatusCode, Json<ErrorResponse>)>
+{
+    let fmt = match p.format.as_deref().unwrap_or("ndjson") {
+        "splunk_hec" | "splunk" => siem::SiemFormat::SplunkHec,
+        "elastic" | "ecs" => siem::SiemFormat::ElasticEcs,
+        "sentinel" | "cef" => siem::SiemFormat::SentinelCef,
+        "syslog" | "rfc5424" => siem::SiemFormat::Rfc5424Syslog,
+        "ndjson" | "json" => siem::SiemFormat::Ndjson,
+        other => return Err(api_error(StatusCode::BAD_REQUEST,
+            &format!("Unknown SIEM format '{}'; expected one of: splunk_hec, elastic, sentinel, syslog, ndjson", sanitize(other)))),
+    };
+
+    let tenant = claims.tenant;
+    let limit = p.limit.unwrap_or(500).clamp(1, 5000);
+    let alerts = db::list_alerts(&state.db, &tenant, limit).await.unwrap_or_default();
+
+    // Resolve host names for the distinct assets referenced by the alerts.
+    let mut host_names: HashMap<String, String> = HashMap::new();
+    for asset_id in alerts.iter().map(|a| a.asset_id.clone()).collect::<std::collections::HashSet<_>>() {
+        if let Some(asset) = db::get_asset(&state.db, &tenant, &asset_id).await {
+            host_names.insert(asset_id, asset.host_name);
+        }
+    }
+
+    let events: Vec<siem::DfimSiemEvent> = alerts.into_iter().map(|a| siem::DfimSiemEvent {
+        event_id: a.alert_id,
+        event_type: "dfim.integrity.alert".into(),
+        severity: a.severity,
+        asset_id: a.asset_id.clone(),
+        message: a.message,
+        host_name: host_names.get(&a.asset_id).cloned().unwrap_or_default(),
+        timestamp: a.timestamp,
+        outcome: if a.acknowledged { "acknowledged".into() } else { "open".into() },
+        merkle_root: None,
+        tampered_blocks: None,
+        fec_corrected: None,
+        rollback_counter: None,
+        attestation_verified: None,
+        enforcement_action: None,
+    }).collect();
+
+    let serializer = siem::get_serializer(fmt);
+    let body = siem::format_batch(serializer.as_ref(), &events);
+    Ok(([(header::CONTENT_TYPE, serializer.content_type())], body).into_response())
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // Router
 // ═══════════════════════════════════════════════════════════════════
@@ -409,7 +465,7 @@ fn make_router(state: AppState) -> Router {
         .route("/v1/nodes/register", post(register_node))
         .route("/v1/alerts", get(list_alerts))
         .route("/v1/alerts/{alert_id}/acknowledge", post(acknowledge_alert))
-        .route("/v1/siem/export", get(|| async { "SIEM export" }))
+        .route("/v1/siem/export", get(siem_export))
         .layer(CompressionLayer::new())
         .layer(RequestBodyLimitLayer::new(10 * 1024 * 1024))
         .layer(cors)
