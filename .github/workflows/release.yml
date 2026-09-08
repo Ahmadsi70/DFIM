@@ -36,7 +36,7 @@ jobs:
         run: cargo install cargo-cyclonedx --version 0.5.9 --locked
 
       - name: Generate reproducible SBOM
-        run: cargo cyclonedx --format json --spec-version 1.5 --override-filename bom
+        run: cargo cyclonedx --format json --spec-version 1.5 -p dfim_cli_provisioner --override-filename bom
 
       - name: Assemble deterministic release bundle
         shell: bash
@@ -92,6 +92,10 @@ jobs:
 
       - name: Package Windows release bundle
         shell: pwsh
+        env:
+          DFIM_BOOT_PUBLIC_KEY_HEX: ${{ secrets.DFIM_BOOT_PUBLIC_KEY_HEX }}
+          DFIM_BOOT_KEY_ID_HEX: ${{ secrets.DFIM_BOOT_KEY_ID_HEX }}
+          DFIM_BOOT_MIN_RELEASE: ${{ secrets.DFIM_BOOT_MIN_RELEASE }}
         run: |
           ./package_windows_release.ps1 -DistDir dist-windows -ArchiveName dfim-windows-x86_64.zip
 
@@ -123,6 +127,10 @@ jobs:
 
       - name: Package UEFI release bundle
         shell: bash
+        env:
+          DFIM_BOOT_PUBLIC_KEY_HEX: ${{ secrets.DFIM_BOOT_PUBLIC_KEY_HEX }}
+          DFIM_BOOT_KEY_ID_HEX: ${{ secrets.DFIM_BOOT_KEY_ID_HEX }}
+          DFIM_BOOT_MIN_RELEASE: ${{ secrets.DFIM_BOOT_MIN_RELEASE }}
         run: bash package_uefi_release.sh
 
       - name: Attest UEFI release bundle
