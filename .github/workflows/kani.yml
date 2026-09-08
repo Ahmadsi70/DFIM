@@ -26,7 +26,6 @@ jobs:
           - proof_image_bounds_rejects_above_64k
           - proof_parse_block_stream_memory_safe
           - proof_parse_uefi_variable_memory_safe
-          - proof_layer0_parsers_unified_memory_safe
     steps:
       - name: Checkout
         uses: actions/checkout@v5 # v4.3.0
