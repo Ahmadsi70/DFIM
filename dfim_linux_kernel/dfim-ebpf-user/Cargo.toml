@@ -14,7 +14,7 @@ path = "src/main.rs"
 [dependencies]
 anyhow = "1.0"
 aya = "0.13.1"
-aya-log = "0.2.1"
+aya-log = "0.3.0"
 clap = { version = "4.5", features = ["derive"] }
 dfim_core_engine = { workspace = true, features = ["linux-loader", "full"] }
 dfim_host_init = { workspace = true }
