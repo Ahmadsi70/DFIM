@@ -36,17 +36,18 @@ jobs:
         run: cargo install cargo-cyclonedx --version 0.5.9 --locked
 
       - name: Generate reproducible SBOM
-        run: |
-          cargo cyclonedx --format json --spec-version 1.5
-          # cargo-cyclonedx 0.5.x puts output in target/cyclonedx/<pkg>/
-          cp target/cyclonedx/*/dfim_cli_provisioner-*.cdx.json bom.json
+        run: cargo cyclonedx --format json --spec-version 1.5
 
       - name: Assemble deterministic release bundle
         shell: bash
         run: |
           mkdir -p dist
           install -m 0755 target/release/dfim-provisioner dist/dfim-provisioner
-          install -m 0644 bom.json dist/dfim.cdx.json
+          BOM_SRC=$(find dfim_cli_provisioner -maxdepth 1 \( -name "bom.json" -o -name "*.cdx.json" \) -print -quit)
+          if [ -z "$BOM_SRC" ]; then
+            echo "ERROR: CycloneDX SBOM not found"; find . -name "bom.json" -o -name "*.cdx.json"; exit 1
+          fi
+          install -m 0644 "$BOM_SRC" dist/dfim.cdx.json
           install -m 0644 LICENSE dist/LICENSE
           (
             cd dist
@@ -61,15 +62,15 @@ jobs:
             LICENSE RELEASE_SHA256SUMS dfim-provisioner dfim.cdx.json
 
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest@v6
         with:
-          subject-path: dfim-linux-x86_64.tar.gz
+          subjects: dfim-linux-x86_64.tar.gz
 
       - name: Attest CycloneDX SBOM
-        uses: actions/attest-sbom@v4
+        uses: actions/attest@v6
         with:
-          subject-path: dfim-linux-x86_64.tar.gz
-          sbom-path: dist/dfim.cdx.json
+          subjects: dfim-linux-x86_64.tar.gz
+          sbom: dist/dfim.cdx.json
 
       - name: Upload attested release bundle
         uses: actions/upload-artifact@v5 # v4.6.2
@@ -103,9 +104,9 @@ jobs:
           ./package_windows_release.ps1 -DistDir dist-windows -ArchiveName dfim-windows-x86_64.zip
 
       - name: Attest Windows release bundle
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest@v6
         with:
-          subject-path: dfim-windows-x86_64.zip
+          subjects: dfim-windows-x86_64.zip
 
       - name: Upload attested Windows bundle
         uses: actions/upload-artifact@v5 # v4.6.2
@@ -137,9 +138,9 @@ jobs:
         run: bash package_uefi_release.sh
 
       - name: Attest UEFI release bundle
-        uses: actions/attest-build-provenance@v4
+        uses: actions/attest@v6
         with:
-          subject-path: dfim-uefi-x86_64.tar.gz
+          subjects: dfim-uefi-x86_64.tar.gz
 
       - name: Upload attested UEFI bundle
         uses: actions/upload-artifact@v5 # v4.6.2
