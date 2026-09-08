@@ -36,14 +36,14 @@ jobs:
         run: cargo install cargo-cyclonedx --version 0.5.9 --locked
 
       - name: Generate reproducible SBOM
-        run: cargo cyclonedx --format json --spec-version 1.5 -p dfim_cli_provisioner --override-filename bom
+        run: cargo cyclonedx --format json --spec-version 1.5 --override-filename bom
 
       - name: Assemble deterministic release bundle
         shell: bash
         run: |
           mkdir -p dist
           install -m 0755 target/release/dfim-provisioner dist/dfim-provisioner
-          install -m 0644 dfim_cli_provisioner/bom.json dist/dfim.cdx.json
+          install -m 0644 bom.json dist/dfim.cdx.json
           install -m 0644 LICENSE dist/LICENSE
           (
             cd dist
