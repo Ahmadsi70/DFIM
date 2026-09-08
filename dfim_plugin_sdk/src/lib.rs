@@ -137,7 +137,6 @@ impl PluginEngine {
     pub fn new() -> Result<Self> {
         let mut config = Config::default();
         config.consume_fuel(true);
-        config.cache_config_load_default()?;
         let engine = Engine::new(&config)?;
 
         Ok(Self {
