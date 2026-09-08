@@ -363,9 +363,9 @@ def _assess_commercial_readiness() -> DimensionScore:
         earned += 1
 
     # Commercial deployment bundle
-    if _has_file("Ooredoo_Production_Bundle/**/*"):
+    if _has_file("DFIM_Production_Bundle/**/*"):
         findings.append(
-            Finding("deployment", "Production bundle", "Ooredoo telecom PoC deployment bundle present with SHA256SUMS and signing", "strength")
+            Finding("deployment", "Production bundle", "DFIM telecom PoC deployment bundle present with SHA256SUMS and signing", "strength")
         )
         earned += 3
 
@@ -668,7 +668,7 @@ def run_assessment(project_root: Path | None = None) -> AssessmentResult:
 
     if has_commercial:
         recommendation = (
-            "DFIM demonstrates clear commercial value with a telecom PoC deployment (Ooredoo), "
+            "DFIM demonstrates clear commercial value with a telecom PoC deployment (DFIM), "
             "enterprise documentation, and supply-chain maturity. Gaps in formal certification "
             "(FIPS 140-3, independent pen-test) and architectural dependencies (IMA, compile-time "
             "key baking) should be addressed for regulated production."

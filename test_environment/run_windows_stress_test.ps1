@@ -15,13 +15,13 @@ $ErrorActionPreference = 'Stop'
 
 $DfimRoot = Split-Path -Parent $PSScriptRoot
 
-function Resolve-OoredooDeliveryRoot {
-    if ($env:DFIM_OOREDOO_ROOT -and (Test-Path -LiteralPath $env:DFIM_OOREDOO_ROOT)) {
-        return (Resolve-Path -LiteralPath $env:DFIM_OOREDOO_ROOT).Path
+function Resolve-DeliveryRoot {
+    if ($env:DFIM_DELIVERY_ROOT -and (Test-Path -LiteralPath $env:DFIM_DELIVERY_ROOT)) {
+        return (Resolve-Path -LiteralPath $env:DFIM_DELIVERY_ROOT).Path
     }
-    $sibling = Join-Path (Split-Path -Parent $DfimRoot) 'Ooredoo'
+    $sibling = Join-Path (Split-Path -Parent $DfimRoot) 'DFIM_Delivery'
     if (-not (Test-Path -LiteralPath $sibling)) {
-        throw 'Ooredoo delivery root not found. Set DFIM_OOREDOO_ROOT.'
+        throw 'DFIM delivery root not found. Set DFIM_DELIVERY_ROOT.'
     }
     return (Resolve-Path -LiteralPath $sibling).Path
 }
@@ -31,8 +31,8 @@ if ($FullValidation) {
     exit $LASTEXITCODE
 }
 
-$OoredooRoot = Resolve-OoredooDeliveryRoot
-$CanonicalScript = Join-Path $OoredooRoot 'Ooredoo Windows\test_environment\run_stress_test.ps1'
+$DeliveryRoot = Resolve-DeliveryRoot
+$CanonicalScript = Join-Path $DeliveryRoot 'DFIM Windows\test_environment\run_stress_test.ps1'
 
 if (-not (Test-Path -LiteralPath $CanonicalScript)) {
     Write-Error "Stress test script not found: $CanonicalScript"

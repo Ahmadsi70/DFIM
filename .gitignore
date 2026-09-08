@@ -30,8 +30,12 @@ debug-*.log
 
 # Misc generated
 /n/
-/Ooredoo_Production_Bundle/
+production_bundle/
 
 # local secret used for DFIM build
 dfim_key.txt
 
+
+# Business model (internal — not for public)
+BUSINESS_MODEL.md
+benchmark_report_*.json

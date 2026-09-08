@@ -4,7 +4,7 @@
     Build Windows DFIM release artifacts (provisioner + UEFI boot guard).
 .DESCRIPTION
     Produces dfim-provisioner.exe and dfim_windows_uefi.efi, staging them to
-    the Ooredoo Windows bin/ directory resolved relative to the DFIM workspace.
+    the deployment bin/ directory resolved relative to the DFIM workspace.
 #>
 param(
     [string]$StageDir,
@@ -21,11 +21,11 @@ function Write-Pass([string]$Msg)  { Write-Host "[PASS] $Msg" -ForegroundColor G
 function Write-Fail([string]$Msg)  { Write-Host "[FAIL] $Msg" -ForegroundColor Red; exit 1 }
 
 function Resolve-DefaultStageDir {
-    if ($env:DFIM_OOREDOO_ROOT -and (Test-Path -LiteralPath $env:DFIM_OOREDOO_ROOT)) {
-        return Join-Path $env:DFIM_OOREDOO_ROOT 'Ooredoo Windows\bin'
+    if ($env:DFIM_DELIVERY_ROOT -and (Test-Path -LiteralPath $env:DFIM_DELIVERY_ROOT)) {
+        return Join-Path $env:DFIM_DELIVERY_ROOT 'DFIM Windows\bin'
     }
-    $siblingOoredoo = Join-Path (Split-Path -Parent $RootDir) 'Ooredoo'
-    return Join-Path $siblingOoredoo 'Ooredoo Windows\bin'
+    $siblingDFIM = Join-Path (Split-Path -Parent $RootDir) 'DFIM_Delivery'
+    return Join-Path $siblingDFIM 'DFIM Windows\bin'
 }
 
 if (-not $StageDir) {

@@ -49,7 +49,7 @@ Phase 12 ███░░░░░░░░░░░░░░░░░░ Enterpr
 |-------|--------|-------------|------|--------|
 | **FIPS 140-3** | ❌ نیاز به HSM/KMS خارجی | $50-150K | ۶-۱۸ ماه | **اجباری** برای دولت آمریکا، بانک‌ها |
 | **Common Criteria EAL4+** | ❌ | $100-300K | ۱۲-۲۴ ماه | برای اروپا و دفاعی |
-| **ISO 27001 Audit** | ⚠️ mapping موجود است | $20-50K | ۳-۶ ماه | برای مخابرات (Ooredoo) |
+| **ISO 27001 Audit** | ⚠️ mapping موجود است | $20-50K | ۳-۶ ماه | برای مخابرات |
 | **SOC 2 Type II** | ❌ | $30-80K | ۶-۱۲ ماه | برای SaaS/Cloud |
 | **PCI-DSS** | ⚠️ plugin reference exists | $20-40K | ۳-۶ ماه | برای بانکی/مالی |
 | **NIST SP 800-193** | ⚠️ طراحی شده بر اساسش | گواهی مستقیم ندارد | - | خوداظهاری |
@@ -180,7 +180,7 @@ Phase 12 ███░░░░░░░░░░░░░░░░░░ Enterpr
 ### 🟡 Medium-term (۶-۱۲ ماه) — برای Production GA
 
 - [ ] **Independent Penetration Test**: توسط شرکت معتبر
-- [ ] **ISO 27001 Audit**: برای Ooredoo / telecom
+- [ ] **ISO 27001 Audit**: برای telecom
 - [ ] **Compatibility matrix**: کامل ۶+ distro/kernel
 - [ ] **Kubernetes Operator**
 - [ ] **Windows UEFI full chain test**: روی سخت‌افزار واقعی

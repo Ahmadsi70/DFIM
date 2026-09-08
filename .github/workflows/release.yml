@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@v5 # v4.3.0
 
       - name: Require release key
         shell: bash
@@ -58,18 +58,18 @@ jobs:
             LICENSE RELEASE_SHA256SUMS dfim-provisioner dfim.cdx.json
 
       - name: Attest build provenance
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: dfim-linux-x86_64.tar.gz
 
       - name: Attest CycloneDX SBOM
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        uses: actions/attest-sbom@v4
         with:
           subject-path: dfim-linux-x86_64.tar.gz
           sbom-path: dist/dfim.cdx.json
 
       - name: Upload attested release bundle
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v5 # v4.6.2
         with:
           name: dfim-linux-x86_64
           path: |
@@ -82,7 +82,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@v5 # v4.3.0
 
       - name: Require release key
         shell: pwsh
@@ -96,12 +96,12 @@ jobs:
           ./package_windows_release.ps1 -DistDir dist-windows -ArchiveName dfim-windows-x86_64.zip
 
       - name: Attest Windows release bundle
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: dfim-windows-x86_64.zip
 
       - name: Upload attested Windows bundle
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v5 # v4.6.2
         with:
           name: dfim-windows-x86_64
           path: |
@@ -113,7 +113,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        uses: actions/checkout@v5 # v4.3.0
 
       - name: Require release key
         shell: bash
@@ -126,12 +126,12 @@ jobs:
         run: bash package_uefi_release.sh
 
       - name: Attest UEFI release bundle
-        uses: actions/attest@59d89421af93a897026c735860bf21b6eb4f7b26 # v4.1.0
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: dfim-uefi-x86_64.tar.gz
 
       - name: Upload attested UEFI bundle
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v5 # v4.6.2
         with:
           name: dfim-uefi-x86_64
           path: |

@@ -9,7 +9,7 @@ if grep -q $'\r' "$0" 2>/dev/null; then
 fi
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BUNDLE_DIR="${ROOT_DIR}/Ooredoo_Production_Bundle"
+BUNDLE_DIR="${ROOT_DIR}/production_bundle"
 BIN_DIR="${BUNDLE_DIR}/bin"
 SBOM_DIR="${BUNDLE_DIR}/sbom"
 CHECKSUM_FILE="${BUNDLE_DIR}/RELEASE_SHA256SUMS"

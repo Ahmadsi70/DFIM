@@ -41,7 +41,7 @@ $env:DFIM_PRODUCTION = '1'
 .\build_windows_release.ps1
 ```
 
-Artifacts are staged to the configured Ooredoo Windows `bin/` directory or `$env:DFIM_OOREDOO_ROOT`.
+Artifacts are staged to the configured deployment Windows `bin/` directory or `$env:DFIM_DEPLOY_ROOT`.
 
 ## Automation stdout (`--format json`)
 
