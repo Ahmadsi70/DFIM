@@ -13,9 +13,6 @@ macro_rules! lc_static {
     }};
 }
 
-#[cfg(all(feature = "hardening", feature = "alloc"))]
-pub(crate) use lc_static;
-
 /// Protocol identifier (encrypted at rest when `hardening` is enabled).
 #[cfg(all(feature = "hardening", feature = "alloc"))]
 pub fn protocol_id() -> &'static str {

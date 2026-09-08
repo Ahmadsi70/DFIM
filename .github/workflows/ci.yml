@@ -16,11 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      # Uses a prebuilt cargo-audit binary, avoiding MSRV drift in cargo-audit's
-      # own dependency tree (latest needs rustc 1.96; project pins 1.91.1).
-      - uses: rustsec/audit-check@v2
+      # Use stable toolchain (not the project's pinned 1.91.1) because
+      # cargo-audit v0.22.2 pulls kstring@2.0.4 which requires rustc 1.96.
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          toolchain: stable
+      - run: cargo install cargo-audit
+      - run: cargo audit
 
   build-test:
     runs-on: ubuntu-latest
@@ -73,7 +75,7 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
-          components: rust-src
+          components: rust-src, rustfmt
       - name: Type-check eBPF probe for bpfel-unknown-none
         shell: bash
         env:
@@ -116,11 +118,35 @@ jobs:
   benchmark:
     runs-on: ubuntu-latest
     needs: build-test
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dfim
+          POSTGRES_PASSWORD: REDACTED
+          POSTGRES_DB: dfim_production
+        ports: ["5432:5432"]
     steps:
       - uses: actions/checkout@v5
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo build -p dfim_management_api --release
-      - run: python3 tools/dfim_http_benchmark.py
+      - name: Start API server
+        env:
+          DATABASE_URL: postgres://dfim:REDACTED@localhost:5432/dfim_production
+          DFIM_API_BIND: 0.0.0.0:3000
+        run: |
+          ./target/release/dfim_management_api &
+          echo $! > /tmp/dfim-api.pid
+          for i in $(seq 1 30); do
+            curl -fsS http://localhost:3000/health 2>/dev/null && break || sleep 1
+          done
+      - name: Run HTTP benchmark
+        env:
+          DATABASE_URL: postgres://dfim:REDACTED@localhost:5432/dfim_production
+        run: python3 tools/dfim_http_benchmark.py
+      - name: Stop API server
+        if: always()
+        run: kill $(cat /tmp/dfim-api.pid) 2>/dev/null || true
 
   sbom:
     runs-on: ubuntu-latest
