@@ -36,7 +36,10 @@ jobs:
         run: cargo install cargo-cyclonedx --version 0.5.9 --locked
 
       - name: Generate reproducible SBOM
-        run: cargo cyclonedx --format json --spec-version 1.5 --override-filename bom
+        run: |
+          cargo cyclonedx --format json --spec-version 1.5
+          # cargo-cyclonedx 0.5.x puts output in target/cyclonedx/<pkg>/
+          cp target/cyclonedx/*/dfim_cli_provisioner-*.cdx.json bom.json
 
       - name: Assemble deterministic release bundle
         shell: bash
