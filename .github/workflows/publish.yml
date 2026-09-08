@@ -14,7 +14,6 @@ on:
 permissions:
   contents: read
   packages: write
-  id-token: write
 
 env:
   REGISTRY: ghcr.io
@@ -46,7 +45,6 @@ jobs:
           echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
-        id: build-push
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -58,10 +56,3 @@ jobs:
             ${{ steps.image.outputs.IMAGE }}:${{ github.sha }}
           build-args: |
             DFIM_CRYPTO_KEY=${{ secrets.DFIM_CRYPTO_KEY }}
-
-      - name: Attest build provenance
-        uses: actions/attest-build-provenance@v4
-        with:
-          subject-name: ${{ steps.image.outputs.IMAGE }}
-          subject-digest: ${{ steps.build-push.outputs.digest }}
-          push-to-registry: true
