@@ -52,8 +52,6 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
           build-args: |
             DFIM_CRYPTO_KEY=${{ secrets.DFIM_CRYPTO_KEY }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
