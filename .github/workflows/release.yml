@@ -56,7 +56,7 @@ jobs:
           subject-path: dfim-linux-x86_64.tar.gz
 
       - name: Upload attested release bundle
-        uses: actions/upload-artifact@v5 # v4.6.2
+        uses: actions/upload-artifact@v7 # v4.6.2
         with:
           name: dfim-linux-x86_64
           path: |
@@ -91,7 +91,7 @@ jobs:
           subject-path: dfim-windows-x86_64.zip
 
       - name: Upload attested Windows bundle
-        uses: actions/upload-artifact@v5 # v4.6.2
+        uses: actions/upload-artifact@v7 # v4.6.2
         with:
           name: dfim-windows-x86_64
           path: |
@@ -125,7 +125,7 @@ jobs:
           subject-path: dfim-uefi-x86_64.tar.gz
 
       - name: Upload attested UEFI bundle
-        uses: actions/upload-artifact@v5 # v4.6.2
+        uses: actions/upload-artifact@v7 # v4.6.2
         with:
           name: dfim-uefi-x86_64
           path: |
