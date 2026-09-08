@@ -1,14 +1,30 @@
 # DFIM Management API — Multi-stage Docker build (ghcr.io)
 # Build: docker build -f deploy/Dockerfile.api -t dfim-api .
+#
+# dfim_management_api has no workspace path-deps, so we replace the root
+# Cargo.toml with a minimal single-member workspace during the build.
 
 FROM rust:1.91-slim-bookworm AS builder
 
 WORKDIR /build
 RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 
-# Copy only what dfim_management_api needs (no workspace path deps).
-COPY Cargo.toml Cargo.lock rust-toolchain.toml ./
+# Copy Cargo.lock and the API crate only.
+COPY Cargo.lock ./
 COPY dfim_management_api/ ./dfim_management_api/
+
+# Minimal workspace Cargo.toml — single member, no path-deps.
+RUN cat > Cargo.toml << 'EOF'
+[workspace]
+resolver = "2"
+members = ["dfim_management_api"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+authors = ["DFIM Engineering"]
+EOF
 
 ARG DFIM_CRYPTO_KEY
 ENV DFIM_CRYPTO_KEY=${DFIM_CRYPTO_KEY}
