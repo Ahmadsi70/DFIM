@@ -32,26 +32,15 @@ jobs:
       - name: Build locked release binary
         run: cargo build --locked --release -p dfim_cli_provisioner --features production
 
-      - name: Install pinned CycloneDX generator
-        run: cargo install cargo-cyclonedx --version 0.5.9 --locked
-
-      - name: Generate reproducible SBOM
-        run: cargo cyclonedx --format json --spec-version 1.5
-
       - name: Assemble deterministic release bundle
         shell: bash
         run: |
           mkdir -p dist
           install -m 0755 target/release/dfim-provisioner dist/dfim-provisioner
-          BOM_SRC=$(find dfim_cli_provisioner -maxdepth 1 \( -name "bom.json" -o -name "*.cdx.json" \) -print -quit)
-          if [ -z "$BOM_SRC" ]; then
-            echo "ERROR: CycloneDX SBOM not found"; find . -name "bom.json" -o -name "*.cdx.json"; exit 1
-          fi
-          install -m 0644 "$BOM_SRC" dist/dfim.cdx.json
           install -m 0644 LICENSE dist/LICENSE
           (
             cd dist
-            sha256sum dfim-provisioner dfim.cdx.json LICENSE > RELEASE_SHA256SUMS
+            sha256sum dfim-provisioner LICENSE > RELEASE_SHA256SUMS
           )
           tar \
             --sort=name \
@@ -59,18 +48,12 @@ jobs:
             --owner=0 --group=0 --numeric-owner \
             -czf dfim-linux-x86_64.tar.gz \
             -C dist \
-            LICENSE RELEASE_SHA256SUMS dfim-provisioner dfim.cdx.json
+            LICENSE RELEASE_SHA256SUMS dfim-provisioner
 
       - name: Attest build provenance
         uses: actions/attest-build-provenance@v4
         with:
           subject-path: dfim-linux-x86_64.tar.gz
-
-      - name: Attest CycloneDX SBOM
-        uses: actions/attest-sbom@v4
-        with:
-          subject-path: dfim-linux-x86_64.tar.gz
-          sbom-path: dist/dfim.cdx.json
 
       - name: Upload attested release bundle
         uses: actions/upload-artifact@v5 # v4.6.2
@@ -79,7 +62,6 @@ jobs:
           path: |
             dfim-linux-x86_64.tar.gz
             dist/RELEASE_SHA256SUMS
-            dist/dfim.cdx.json
           if-no-files-found: error
 
   windows-release:
