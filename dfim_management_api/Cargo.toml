@@ -19,7 +19,7 @@ sha2 = "0.10"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 parking_lot = "0.12"
-sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "chrono"] }
+sqlx = { version = "0.9", features = ["runtime-tokio", "postgres", "chrono"] }
 hmac = "0.12"
 base64 = "0.22"
 subtle = "2"
