@@ -46,7 +46,7 @@ DFIM emits structured security events when the integrity pipeline returns **`Cor
   "severity": "critical",
   "timestamp": "2026-06-27T14:32:18.447Z",
   "host_ip": "10.42.18.55",
-  "hostname": "WIN-PROD-DC01.ooredoo.local",
+  "hostname": "WIN-PROD-DC01.dfim.local",
   "enforcement_layer": "ebpf_lsm",
   "asset_path": "/opt/guarded/app-server",
   "sidecar_path": "/opt/guarded/app-server.dfim",
@@ -76,7 +76,7 @@ DFIM emits structured security events when the integrity pipeline returns **`Cor
   "severity": "high",
   "timestamp": "2026-06-27T14:35:02.119Z",
   "host_ip": "10.42.18.55",
-  "hostname": "WIN-PROD-DC01.ooredoo.local",
+  "hostname": "WIN-PROD-DC01.dfim.local",
   "enforcement_layer": "host",
   "asset_path": "C:\\EFI\\Microsoft\\Boot\\bootmgfw.efi",
   "sidecar_path": "C:\\EFI\\Microsoft\\Boot\\bootmgfw.efi.dfim",
@@ -168,7 +168,7 @@ Kernel-side enforcement latency includes LSM hook dispatch and map lookup overhe
 
 ## 3. Compatibility Matrix
 
-Verified platform layers for DFIM PoC and enterprise pilot deployments. Status reflects Ooredoo trial validation cycle (2026-Q2).
+Verified platform layers for DFIM PoC and enterprise pilot deployments. Status reflects pilot validation cycle (2026-Q2).
 
 | OS / Platform | Version | Component | DFIM Layer | BTF / UEFI | Verification Status | Notes |
 |---------------|---------|-----------|------------|------------|---------------------|-------|

@@ -30,12 +30,12 @@ This runbook provides production troubleshooting procedures for DFIM deployments
 
 | Component | Path |
 |-----------|------|
-| Windows provisioner | `C:\Users\badri\Ooredoo\Ooredoo Windows\bin\dfim-provisioner.exe` |
-| UEFI boot guard | `C:\Users\badri\Ooredoo\Ooredoo Windows\bin\dfim_windows_uefi.efi` |
-| Windows stress / demo | `C:\Users\badri\Ooredoo\Ooredoo Windows\test_environment\run_stress_test.ps1` |
+| Windows provisioner | `C:\DFIM\bin\dfim-provisioner.exe` |
+| UEFI boot guard | `C:\DFIM\bin\dfim_windows_uefi.efi` |
+| Windows stress / demo | `C:\DFIM\test_environment\run_stress_test.ps1` |
 | DFIM workspace launcher | `C:\Users\badri\DFIM\test_environment\run_windows_stress_test.ps1` |
 | Linux eBPF loader (build output) | `dfim_linux_kernel/dfim-ebpf-user` (WSL2 / native Linux) |
-| Audit runbook | `C:\Users\badri\DFIM\test_environment\docs\DFIM_Audit_Runbook_Ooredoo.txt` |
+| Audit runbook | `C:\Users\badri\DFIM\test_environment\docs\DFIM_Audit_Runbook_Telecom.txt` |
 
 ### 1.4 Prerequisites
 
@@ -64,7 +64,7 @@ This runbook provides production troubleshooting procedures for DFIM deployments
 #### Dry-run validation (no sidecar write)
 
 ```powershell
-cd "C:\Users\badri\Ooredoo\Ooredoo Windows\test_environment"
+cd "C:\DFIM\test_environment"
 ..\bin\dfim-provisioner.exe .\fixtures\demo_boot_image.bin --dry-run
 ```
 
@@ -92,7 +92,7 @@ cd "C:\Users\badri\Ooredoo\Ooredoo Windows\test_environment"
 cd C:\Users\badri\DFIM
 cargo build --release -p dfim_cli_provisioner
 Copy-Item -Force .\target\release\dfim-provisioner.exe `
-  "C:\Users\badri\Ooredoo\Ooredoo Windows\bin\dfim-provisioner.exe"
+  "C:\DFIM\bin\dfim-provisioner.exe"
 ```
 
 ---
@@ -101,7 +101,7 @@ Copy-Item -Force .\target\release\dfim-provisioner.exe `
 
 ```powershell
 # Canonical path
-& "C:\Users\badri\Ooredoo\Ooredoo Windows\test_environment\run_stress_test.ps1"
+& "C:\DFIM\test_environment\run_stress_test.ps1"
 
 # Legacy runbook alias (forwards to canonical script)
 & "C:\Users\badri\DFIM\test_environment\run_windows_stress_test.ps1"
@@ -188,7 +188,7 @@ Internal errors originate from `dfim_core_engine::DfimError`. CLI tools surface 
 | Loader fails: BTF required | Kernel built without `CONFIG_DEBUG_INFO_BTF` | Rebuild kernel or deploy on BTF-enabled host |
 | `-EPERM` on exec of guarded binary | Validation failed in `enforce_dfim_integrity` | Check maps populated; re-run `provision`; verify image ≤ 262 KB |
 | Probe load: stack limit | Stale probe binary | Rebuild `dfim-ebpf-user` from current workspace |
-| `PathNotFound` on demo script | Wrong runbook path | Use `DFIM\test_environment\run_windows_stress_test.ps1` launcher or Ooredoo Windows canonical path |
+| `PathNotFound` on demo script | Wrong runbook path | Use `DFIM\test_environment\run_windows_stress_test.ps1` launcher or the canonical deployment path |
 
 ---
 
@@ -224,7 +224,7 @@ sha256sum /path/to/binary /path/to/binary.dfim
 
 **Step 2 — Compare against authorized baseline**
 
-- Locate approved Merkle root from change record, `DFIM_Audit_Runbook_Ooredoo.txt`, or CMDB golden reference.
+- Locate approved Merkle root from change record, `DFIM_Audit_Runbook_Telecom.txt`, or CMDB golden reference.
 - If **live root == baseline** → false alarm; check for wrong file path or stale sidecar pointer.
 - If **live root ≠ baseline** → proceed to Step 3.
 

@@ -19,21 +19,21 @@ $ErrorActionPreference = 'Stop'
 
 $DfimRoot = $PSScriptRoot
 
-function Resolve-OoredooDeliveryRoot {
-    if ($env:DFIM_OOREDOO_ROOT -and (Test-Path -LiteralPath $env:DFIM_OOREDOO_ROOT)) {
-        return (Resolve-Path -LiteralPath $env:DFIM_OOREDOO_ROOT).Path
+function Resolve-DeliveryRoot {
+    if ($env:DFIM_DELIVERY_ROOT -and (Test-Path -LiteralPath $env:DFIM_DELIVERY_ROOT)) {
+        return (Resolve-Path -LiteralPath $env:DFIM_DELIVERY_ROOT).Path
     }
-    $sibling = Join-Path (Split-Path -Parent $DfimRoot) 'Ooredoo'
+    $sibling = Join-Path (Split-Path -Parent $DfimRoot) 'DFIM_Delivery'
     if (-not (Test-Path -LiteralPath $sibling)) {
-        throw 'Ooredoo delivery root not found. Set DFIM_OOREDOO_ROOT.'
+        throw 'DFIM delivery root not found. Set DFIM_DELIVERY_ROOT.'
     }
     return (Resolve-Path -LiteralPath $sibling).Path
 }
 
-$OoredooRoot   = Resolve-OoredooDeliveryRoot
-$WinTestRoot   = Join-Path $OoredooRoot 'Ooredoo Windows\test_environment'
-$LinuxTestRoot = Join-Path $OoredooRoot 'Ooredoo Linux\test_environment'
-$LinuxBinDir   = Join-Path $OoredooRoot 'Ooredoo Linux\bin'
+$DeliveryRoot   = Resolve-DeliveryRoot
+$WinTestRoot   = Join-Path $DeliveryRoot 'DFIM Windows\test_environment'
+$LinuxTestRoot = Join-Path $DeliveryRoot 'DFIM Linux\test_environment'
+$LinuxBinDir   = Join-Path $DeliveryRoot 'DFIM Linux\bin'
 $SummaryLog    = Join-Path $DfimRoot 'test_environment\logs\full_validation.jsonl'
 
 if ($WindowsOnly) { $SkipLinux = $true }

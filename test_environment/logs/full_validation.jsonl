@@ -1,17 +1,17 @@
 ﻿{"ts":"2026-07-01T16:36:48+00:00","test_id":"PHASE-CARGO-TEST","status":"PASS","exit_code":0,"detail":"completed"}
 {"ts":"2026-07-01T16:36:52+00:00","test_id":"PHASE-WIN-MASTER","status":"PASS","exit_code":0,"detail":"completed"}
 {"ts":"2026-07-01T16:37:03+00:00","test_id":"PHASE-WIN-STRESS","status":"PASS","exit_code":0,"detail":"completed"}
-{"ts":"2026-07-01T16:37:13+00:00","test_id":"PHASE-LIN-MASTER","status":"FAIL","exit_code":1,"detail":"[PASS] verify target=/mnt/c/Users/badri/Ooredoo/Ooredoo Linux/test_environment/fixtures/demo_linux_binary.elf blocks=16 merkle_root=af8cd0e9071f93eedc5f9641f1e10b3cb9c172ba1820dc8a4a4b9c25cc423f73"}
+{"ts":"2026-07-01T16:37:13+00:00","test_id":"PHASE-LIN-MASTER","status":"FAIL","exit_code":1,"detail":"[PASS] verify target=/mnt/c/Users/badri/DFIM/DFIM Linux/test_environment/fixtures/demo_linux_binary.elf blocks=16 merkle_root=af8cd0e9071f93eedc5f9641f1e10b3cb9c172ba1820dc8a4a4b9c25cc423f73"}
 {"ts":"2026-07-01T16:41:00+00:00","test_id":"PHASE-CARGO-TEST","status":"PASS","exit_code":0,"detail":"completed"}
 {"ts":"2026-07-01T16:41:04+00:00","test_id":"PHASE-WIN-MASTER","status":"PASS","exit_code":0,"detail":"completed"}
 {"ts":"2026-07-01T16:41:20+00:00","test_id":"PHASE-WIN-STRESS","status":"PASS","exit_code":0,"detail":"completed"}
 {"ts":"2026-07-01T16:41:31+00:00","test_id":"PHASE-LIN-MASTER","status":"PASS","exit_code":0,"detail":"completed"}
-{"ts":"2026-07-01T16:41:32+00:00","test_id":"PHASE-LIN-KERNEL","status":"FAIL","exit_code":1,"detail":"At C:\Users\badri\Ooredoo\Ooredoo Linux\test_environment\run_linux_stress_test.ps1:56 char:61
+{"ts":"2026-07-01T16:41:32+00:00","test_id":"PHASE-LIN-KERNEL","status":"FAIL","exit_code":1,"detail":"At C:\Users\badri\DFIM\DFIM Linux\test_environment\run_linux_stress_test.ps1:56 char:61
 + ... wslOutput = wsl bash -lc \"sed -i 's/\r$//' '$KernelScript' && chmod + ...
 +                                                                ~~
 The token '&&' is not a valid statement separator in this version.
 
-At C:\Users\badri\Ooredoo\Ooredoo Linux\test_environment\run_linux_stress_test.ps1:56 char:89
+At C:\Users\badri\DFIM\DFIM Linux\test_environment\run_linux_stress_test.ps1:56 char:89
 + ... d -i 's/\r$//' '$KernelScript' && chmod +x '$KernelScript' && export  ...
 +                                                                ~~
 The token '&&' is not a valid statement separator in this version."}
