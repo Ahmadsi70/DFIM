@@ -342,7 +342,9 @@ mod tests {
         // Without env-configured accounts, login must fail (fail closed).
         let resp = login(&LoginRequest {
             username: "admin".into(),
-            password: option_env!("DFIM_ADMIN_PASSWORD").unwrap_or("ci_test_admin_pass").into(),
+            password: option_env!("DFIM_ADMIN_PASSWORD")
+                .unwrap_or("ci_test_admin_pass")
+                .into(),
         });
         assert!(resp.is_err());
     }
