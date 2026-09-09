@@ -6,7 +6,7 @@ title: DFIM — Deterministic Firmware Integrity Matrix
 # 🔐 DFIM — Deterministic Firmware Integrity Matrix
 
 [![Rust](https://img.shields.io/badge/Rust-1.91.1-dea584?logo=rust)](https://www.rust-lang.org)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue)](LICENSE)
 [![CI](https://github.com/Ahmadsi70/DFIM/actions/workflows/ci.yml/badge.svg)](https://github.com/Ahmadsi70/DFIM/actions)
 [![Fuzzing](https://github.com/Ahmadsi70/DFIM/actions/workflows/fuzz.yml/badge.svg)](https://github.com/Ahmadsi70/DFIM/actions)
 [![Formal Verification](https://github.com/Ahmadsi70/DFIM/actions/workflows/kani.yml/badge.svg)](https://github.com/Ahmadsi70/DFIM/actions)
@@ -178,9 +178,9 @@ DFIM Workspace (7 crates)
 
 ## 📜 License
 
-**DFIM Community Edition** is licensed under **Apache 2.0** — see [LICENSE](LICENSE) for details.
+**DFIM Community Edition** is licensed under **GNU AGPL-3.0** — see [LICENSE](LICENSE) for details. This is a strong copyleft license: if you modify the code and offer it as a network service (SaaS), you must release your changes under the same license (Section 13).
 
-**DFIM Enterprise Edition** adds advanced features: TPM attestation, FIPS 140-3 validation, SIEM connectors, WASM plugin SDK, premium support, and SLA. Contact us for licensing.
+**DFIM Enterprise Edition** is available under a [commercial license](LICENSE-COMMERCIAL) that exempts you from AGPL-3.0 network-use obligations. Enterprise adds: TPM attestation, FIPS 140-3 validation, SIEM connectors, WASM plugin SDK, premium support, and SLA. Contact [dfim-licensing@example.com](mailto:dfim-licensing@example.com) for a quote.
 
 ---
 

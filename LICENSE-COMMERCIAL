@@ -1,0 +1,106 @@
+DFIM Enterprise Edition — Commercial License Terms
+====================================================
+
+Version 1.0, September 2026
+Copyright (C) 2026 DFIM Engineering
+
+1. SCOPE
+
+This is a commercial license agreement between DFIM Engineering ("Licensor")
+and the licensee ("Licensee") for the software product known as DFIM —
+Deterministic Firmware Integrity Matrix ("the Software").
+
+This license applies ONLY to parties who have purchased a valid Enterprise
+License from DFIM Engineering and received a signed license key.
+
+2. GRANT OF LICENSE
+
+Subject to full payment of applicable license fees and compliance with
+all terms herein, Licensor grants Licensee a non-exclusive, non-transferable,
+worldwide license to:
+
+  a) Use the Software in production environments for commercial purposes
+     as specified in the Order Form.
+  b) Modify the Software for internal use.
+  c) Integrate the Software into Licensee's products or services, provided
+     such integration does not expose AGPL-3.0 Network Use obligations
+     (Section 13 of the AGPL-3.0).
+  d) Distributing the Software as part of a proprietary offering, provided
+     the Licensee's offering is not a direct competitor to the Software.
+
+3. EXEMPTION FROM AGPL-3.0 NETWORK USE OBLIGATIONS
+
+The primary purpose of this commercial license is to exempt the Licensee
+from the obligations under Section 13 ("Remote Network Interaction") of
+the GNU Affero General Public License version 3. Under this commercial
+license, Licensee is NOT required to:
+
+  a) Disclose the source code of their modifications to the Software.
+  b) Provide a "Download Source" link in web interfaces or network
+     services that use the Software.
+  c) License derivative works under AGPL-3.0.
+
+4. LICENSE TERM
+
+This license is valid for the period specified in the Order Form (typically
+one year) and renews automatically upon payment of annual renewal fees.
+
+5. LICENSE FEES
+
+License fees are set forth in the Order Form and are based on:
+  - Number of protected nodes/assets
+  - Number of deployment sites
+  - Support tier (Standard, Premium, 24/7)
+  - Custom development or integration services
+
+Contact dfim-licensing@example.com for a quote.
+
+6. RESTRICTIONS
+
+Licensee may NOT:
+  a) Sublicense, resell, or redistribute the Software to third parties
+     except as explicitly permitted in the Order Form.
+  b) Remove or obscure any copyright notices or license attribution.
+  c) Use the Software to develop a competing product.
+  d) Exceed the licensed node count or deployment scope specified in
+     the Order Form without purchasing additional licenses.
+
+7. TERMINATION
+
+This license terminates immediately upon:
+  a) Non-payment of license fees.
+  b) Breach of any term herein.
+  c) Expiration without renewal.
+
+Upon termination, Licensee must cease all use of the Software and destroy
+or return all copies within 30 days.
+
+8. WARRANTY AND LIABILITY
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. IN NO EVENT
+SHALL THE LICENSOR BE LIABLE FOR ANY DAMAGES ARISING FROM THE USE OF THE
+SOFTWARE. THE LICENSOR'S TOTAL LIABILITY SHALL NOT EXCEED THE LICENSE FEES
+PAID BY LICENSEE IN THE PRECEDING TWELVE MONTHS.
+
+9. SUPPORT AND MAINTENANCE
+
+Enterprise License includes support per the selected tier:
+  - Standard: Email support, 48-hour response
+  - Premium: Email + phone, 8-hour response
+  - 24/7: Phone + dedicated Slack, 1-hour response (critical)
+
+10. GOVERNING LAW
+
+This agreement shall be governed by the laws applicable in the jurisdiction
+specified in the Order Form.
+
+11. FULL AGREEMENT
+
+This document, together with the Order Form and any signed addenda,
+constitutes the entire agreement between the parties.
+
+---
+
+For licensing inquiries:
+  dfim-licensing@example.com
+  https://github.com/Ahmadsi70/DFIM
