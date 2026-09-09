@@ -34,7 +34,7 @@ jobs:
             max_len: 64
     steps:
       - name: Checkout
-        uses: actions/checkout@v5 # v4.3.0
+        uses: actions/checkout@v7 # v4.3.0
 
       - name: Install nightly Rust
         run: |

@@ -15,7 +15,7 @@ jobs:
   security-audit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       # Use stable toolchain (not the project's pinned 1.91.1) because
       # cargo-audit v0.22.2 pulls kstring@2.0.4 which requires rustc 1.96.
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -43,7 +43,7 @@ jobs:
           - crate: dfim_cli_provisioner
             test: --bins
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
@@ -58,7 +58,7 @@ jobs:
       # Compile-only gate: the probe object is built separately in ebpf-probe.
       DFIM_SKIP_EBPF_BUILD: "1"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: rustfmt, clippy
@@ -71,7 +71,7 @@ jobs:
   ebpf-probe:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
@@ -98,7 +98,7 @@ jobs:
           POSTGRES_DB: dfim_production
         ports: ["5432:5432"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo test -p dfim_core_engine --test integration_tests
 
@@ -108,7 +108,7 @@ jobs:
       matrix:
         target: [parse_block_stream, parse_boot_manifest, parse_rollback_baseline, parse_authenticated_state_db]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
@@ -127,7 +127,7 @@ jobs:
           POSTGRES_DB: dfim_production
         ports: ["5432:5432"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo build -p dfim_management_api --release
       - name: Start API server
@@ -151,7 +151,7 @@ jobs:
   sbom:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - run: cargo install cargo-cyclonedx
       - run: cargo cyclonedx --all --spec-version 1.5
