@@ -144,8 +144,6 @@ DFIM Workspace (7 crates)
 | [`docs/enterprise/PRODUCT_SECURITY_WHITE_PAPER.md`](docs/enterprise/PRODUCT_SECURITY_WHITE_PAPER.md) | Security white paper |
 | [`docs/OPERATOR_RUNBOOK.md`](docs/OPERATOR_RUNBOOK.md) | Operations guide |
 | [`SECURITY_BENCHMARK_REPORT.md`](SECURITY_BENCHMARK_REPORT.md) | 735-file security benchmark |
-| [`BUSINESS_MODEL.md`](BUSINESS_MODEL.md) | Business model & pricing |
-| [`ENTERPRISE_GAP_ANALYSIS.md`](ENTERPRISE_GAP_ANALYSIS.md) | Enterprise readiness analysis |
 
 ---
 
@@ -164,7 +162,7 @@ DFIM Workspace (7 crates)
 
 **DFIM Community Edition** is licensed under **Apache 2.0** — see [LICENSE](LICENSE) for details.
 
-**DFIM Enterprise Edition** adds TPM attestation, FIPS 140-3 validation, SIEM connectors, WASM plugin SDK, SLA support, and more. See [BUSINESS_MODEL.md](BUSINESS_MODEL.md) for details.
+**DFIM Enterprise Edition** adds advanced features: TPM attestation, FIPS 140-3 validation, SIEM connectors, WASM plugin SDK, premium support, and SLA. Contact us for licensing.
 
 ---
 
@@ -186,5 +184,5 @@ If you find DFIM useful:
 ---
 
 <p align="center">
-  <b>Deterministic Integrity. Built in Rust. Proven in Qatar.</b>
+  <b>Deterministic Integrity. Built in Rust.</b>
 </p>
