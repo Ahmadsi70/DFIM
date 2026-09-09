@@ -33,9 +33,9 @@ This runbook provides production troubleshooting procedures for DFIM deployments
 | Windows provisioner | `C:\DFIM\bin\dfim-provisioner.exe` |
 | UEFI boot guard | `C:\DFIM\bin\dfim_windows_uefi.efi` |
 | Windows stress / demo | `C:\DFIM\test_environment\run_stress_test.ps1` |
-| DFIM workspace launcher | `C:\Users\badri\DFIM\test_environment\run_windows_stress_test.ps1` |
+| DFIM workspace launcher | `<DFIM_WORKSPACE>\test_environment\run_windows_stress_test.ps1` |
 | Linux eBPF loader (build output) | `dfim_linux_kernel/dfim-ebpf-user` (WSL2 / native Linux) |
-| Audit runbook | `C:\Users\badri\DFIM\test_environment\docs\DFIM_Audit_Runbook_Telecom.txt` |
+| Audit runbook | `<DFIM_WORKSPACE>\test_environment\docs\DFIM_Audit_Runbook_Telecom.txt` |
 
 ### 1.4 Prerequisites
 
@@ -89,7 +89,7 @@ cd "C:\DFIM\test_environment"
 #### Rebuild and redeploy (after source changes)
 
 ```powershell
-cd C:\Users\badri\DFIM
+cd $env:DFIM_WORKSPACE
 cargo build --release -p dfim_cli_provisioner
 Copy-Item -Force .\target\release\dfim-provisioner.exe `
   "C:\DFIM\bin\dfim-provisioner.exe"
@@ -104,7 +104,7 @@ Copy-Item -Force .\target\release\dfim-provisioner.exe `
 & "C:\DFIM\test_environment\run_stress_test.ps1"
 
 # Legacy runbook alias (forwards to canonical script)
-& "C:\Users\badri\DFIM\test_environment\run_windows_stress_test.ps1"
+& "$env:DFIM_WORKSPACE\test_environment\run_windows_stress_test.ps1"
 ```
 
 ---
@@ -117,7 +117,7 @@ Copy-Item -Force .\target\release\dfim-provisioner.exe `
 #### Build (WSL2 or native Linux)
 
 ```bash
-cd /mnt/c/Users/badri/DFIM/dfim_linux_kernel/dfim-ebpf-user
+cd <DFIM_WORKSPACE>/dfim_linux_kernel/dfim-ebpf-user
 cargo build --release
 ```
 

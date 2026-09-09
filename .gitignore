@@ -39,3 +39,12 @@ dfim_key.txt
 # Business model (internal — not for public)
 BUSINESS_MODEL.md
 benchmark_report_*.json
+
+# Environment files
+.env
+.env.local
+.env.production
+# Internal planning documents
+ENTERPRISE_GAP_ANALYSIS.md
+reports.html
+dfim_revolutionary_roadmap.py

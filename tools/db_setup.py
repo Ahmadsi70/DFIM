@@ -1,6 +1,7 @@
+import os
 import subprocess
 cmds = [
-    "CREATE USER dfim WITH PASSWORD 'REDACTED';",
+    "CREATE USER dfim WITH PASSWORD '" + os.getenv("DFIM_DB_PASSWORD", "ci_test_password") + "';",
     "CREATE DATABASE dfim_production OWNER dfim;",
     "GRANT ALL PRIVILEGES ON DATABASE dfim_production TO dfim;",
 ]

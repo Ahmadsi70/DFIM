@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """Seed DFIM production database with 100K assets, 10K nodes, 5K alerts"""
 import hashlib, json, random, sys, time, urllib.request, urllib.error
@@ -17,7 +18,7 @@ def api(method, path, body=None, token=None):
         return -1, {"error": str(e)}
 
 # Login
-code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "REDACTED"})
+code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})
 token = data.get("access_token", "")
 if not token:
     print("LOGIN FAILED")

@@ -1,6 +1,7 @@
+import os
 import urllib.request, json
 try:
-    data = json.dumps({"username":"admin","password":"REDACTED"}).encode()
+    data = json.dumps({"username":"admin","password":"" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""}).encode()
     req = urllib.request.Request("http://localhost:3000/v1/auth/login", data=data, headers={"Content-Type":"application/json"}, method="POST")
     r = urllib.request.urlopen(req, timeout=5)
     resp = json.loads(r.read())

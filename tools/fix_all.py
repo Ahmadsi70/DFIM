@@ -60,7 +60,7 @@ print("\n=== FIX-4: Deploy ===")
 subprocess.Popen([f"{PROJECT}/target/release/dfim_management_api"],
                 env={**env, "DFIM_API_BIND": "0.0.0.0:3000",
                      "DFIM_JWT_SECRET": "prod-jwt-fixed-v3-2026",
-                     "DATABASE_URL": "postgres://dfim:REDACTED@localhost/dfim_production"},
+                     "DATABASE_URL": "postgres://dfim:" + os.getenv("DFIM_DB_PASSWORD", "ci_test_password") + "@localhost/dfim_production"},
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 time.sleep(4)
 
@@ -82,7 +82,7 @@ except urllib.error.HTTPError as e:
 # 6. Benchmark with indexes
 print("\n=== Benchmark ===")
 # Login
-data = json.dumps({"username": "admin", "password": "REDACTED"}).encode()
+data = json.dumps({"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""}).encode()
 req = urllib.request.Request(f"{API}/v1/auth/login", data=data,
                              headers={"Content-Type": "application/json"}, method="POST")
 token = json.loads(urllib.request.urlopen(req).read())["access_token"]

@@ -299,7 +299,7 @@ report = {
     'detailed_results': results_all
 }
 
-report_path = Path('C:/Users/badri/DFIM/benchmark_report_windows.json')
+report_path = Path(__file__).resolve().parent.parent / 'benchmark_report_windows.json'
 report_path.write_text(json.dumps(report, indent=2, default=str), encoding='utf-8')
 print(f'\n  Full JSON report saved to: {report_path}')
 print()

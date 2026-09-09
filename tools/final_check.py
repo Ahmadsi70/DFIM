@@ -1,10 +1,11 @@
+import os
 #!/usr/bin/env python3
 import urllib.request, json, time, threading, random
 
 API = "http://localhost:3000"
 
 # Login
-data = json.dumps({"username": "admin", "password": "REDACTED"}).encode()
+data = json.dumps({"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""}).encode()
 req = urllib.request.Request(f"{API}/v1/auth/login", data=data,
     headers={"Content-Type": "application/json"}, method="POST")
 token = json.loads(urllib.request.urlopen(req).read())["access_token"]

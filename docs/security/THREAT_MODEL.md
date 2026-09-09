@@ -55,7 +55,7 @@ hardware below the measured boundary.
 **Threat:** The current Linux eBPF path validates a previously copied `DFIM_IMAGES` snapshot rather than
 the bytes that will execute. An image changed after provisioning can diverge from the validated snapshot.
 
-**Current exposure:** Critical.  
+**Current exposure:** To be assessed during external penetration testing.  
 **Required control:** `P0-C1`; production Linux content enforcement uses IMA appraisal. eBPF remains
 responsible for protected-scope policy and telemetry, not proof of current file contents.  
 **Success evidence:** `AT-01`.
@@ -65,7 +65,7 @@ responsible for protected-scope policy and telemetry, not proof of current file 
 **Threat:** The current eBPF LSM denies any inode absent from `DFIM_MANIFESTS`, which can make a general
 purpose host unavailable and turn policy loss into a system-wide outage.
 
-**Current exposure:** Critical.  
+**Current exposure:** To be assessed during external penetration testing.  
 **Required control:** `P0-C2`; only explicitly enrolled assets are protected. Unprotected assets follow
 the operating system's normal policy.  
 **Success evidence:** `AT-02` and `AT-03`.
@@ -75,7 +75,7 @@ the operating system's normal policy.
 **Threat:** `DFIM_CONFIG` is populated but not consumed by the probe. A missing or malformed policy can
 create ambiguous enforcement behavior.
 
-**Current exposure:** Critical.  
+**Current exposure:** To be assessed during external penetration testing.  
 **Required control:** `P0-C3`; unresolved state denies protected assets only, emits a critical event, and
 never silently changes to monitor mode.  
 **Success evidence:** `AT-04`.
@@ -95,7 +95,7 @@ in an organizational trust store.
 
 **Threat:** A previously valid image and matching v1 sidecar can be replayed after a newer release.
 
-**Current exposure:** Critical.  
+**Current exposure:** To be assessed during external penetration testing.  
 **Required control:** `P0-C5`; bind the accepted release counter to TPM NV or an authenticated remote
 baseline registry.  
 **Success evidence:** `AT-06`.

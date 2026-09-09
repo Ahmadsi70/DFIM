@@ -308,7 +308,7 @@ mod tests {
         let accounts = vec![
             (
                 "acme_admin".to_string(),
-                "acme_pass".to_string(),
+                "test_pass_acme".to_string(),
                 UserIdentity {
                     role: "admin".into(),
                     tenant: "acme-corp".into(),
@@ -316,17 +316,17 @@ mod tests {
             ),
             (
                 "megabank_op".to_string(),
-                "bank_pass".to_string(),
+                "test_pass_bank".to_string(),
                 UserIdentity {
                     role: "operator".into(),
                     tenant: "megabank".into(),
                 },
             ),
         ];
-        let a = resolve_identity(&accounts, "acme_admin", "acme_pass").unwrap();
+        let a = resolve_identity(&accounts, "acme_admin", "test_pass_acme").unwrap();
         assert_eq!(a.role, "admin");
         assert_eq!(a.tenant, "acme-corp");
-        let b = resolve_identity(&accounts, "megabank_op", "bank_pass").unwrap();
+        let b = resolve_identity(&accounts, "megabank_op", "test_pass_bank").unwrap();
         assert_eq!(b.role, "operator");
         assert_ne!(a.tenant, b.tenant);
     }
@@ -342,7 +342,7 @@ mod tests {
         // Without env-configured accounts, login must fail (fail closed).
         let resp = login(&LoginRequest {
             username: "admin".into(),
-            password: "REDACTED".into(),
+            password: option_env!("DFIM_ADMIN_PASSWORD").unwrap_or("ci_test_admin_pass").into(),
         });
         assert!(resp.is_err());
     }

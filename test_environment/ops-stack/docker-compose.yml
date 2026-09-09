@@ -10,7 +10,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?set Grafana admin password}
       GF_AUTH_ANONYMOUS_ENABLED: "true"
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro

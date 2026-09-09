@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 DFIM World-Class Security Gauntlet — Layer 2, 4, 1
@@ -98,7 +99,7 @@ def sec_l4_jwt_attacks():
     print("\n=== SEC-L4: JWT Attack Suite ===")
     
     # Get valid token for testing
-    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "REDACTED"})
+    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})
     valid_token = data.get("access_token", "")
     print(f"  Base token: {'OK' if valid_token else 'FAIL'}")
     
@@ -345,7 +346,7 @@ def sec_l1_timing_audit():
     # Timing test: JWT verification
     # Measure valid vs invalid token verification times
     print("  [TIME-1] JWT verification timing leak...")
-    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "REDACTED"})
+    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})
     valid_token = data.get("access_token", "")
     
     valid_times = []

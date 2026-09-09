@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """DFIM Phase 5 — Operational Certification Tests"""
 import hashlib, json, os, time, urllib.request, urllib.error, random
@@ -45,7 +46,7 @@ results["db_enroll"] = code == 201
 # Restart API and verify data persists
 print(f"  Killing API...")
 os.system("pkill -f dfim_management_api 2>/dev/null; sleep 1")
-os.system("cd /workspace/dfim && DATABASE_URL=postgres://dfim:REDACTED@localhost/dfim_production DFIM_API_BIND=0.0.0.0:3000 nohup ./target/release/dfim_management_api > /tmp/api5.log 2>&1 &")
+os.system("cd /workspace/dfim && DATABASE_URL=postgres://dfim:" + os.getenv("DFIM_DB_PASSWORD", "ci_test_password") + "@localhost/dfim_production DFIM_API_BIND=0.0.0.0:3000 nohup ./target/release/dfim_management_api > /tmp/api5.log 2>&1 &")
 time.sleep(3)
 
 # Verify asset survived restart
@@ -62,7 +63,7 @@ api("DELETE", "/v1/assets/phase5-db-test")
 print("\n--- 5.2: Auth & RBAC ---")
 
 # Login
-code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "REDACTED"})
+code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})
 token = data.get("access_token", "")
 print(f"  Login (admin): {code} | role={data.get('role')} | token={'OK' if token else 'FAIL'}")
 results["auth_login"] = code == 200 and len(token) > 50

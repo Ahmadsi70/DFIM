@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """DFIM Hardcore Security Suite — sqlmap, brute force, exfil, race, rate limit"""
 import hashlib, json, random, statistics, subprocess, sys, time, threading, urllib.request, urllib.error
@@ -6,7 +7,7 @@ from datetime import datetime, UTC
 from pathlib import Path
 
 API = "http://localhost:3000"
-DB = "postgres://dfim:REDACTED@localhost/dfim_production"
+DB = "postgres://dfim:" + os.getenv("DFIM_DB_PASSWORD", "ci_test_password") + "@localhost/dfim_production"
 TOKEN = None
 REPORT = {}
 API_ERROR = None
@@ -29,7 +30,7 @@ def a(method, path, body=None, hdr=None):
 
 def login():
     global TOKEN
-    c, d = a("POST", "/v1/auth/login", {"username": "admin", "password": "REDACTED"})
+    c, d = a("POST", "/v1/auth/login", {"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})
     TOKEN = d.get("access_token", "")
     return TOKEN
 
