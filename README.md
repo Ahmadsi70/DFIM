@@ -68,38 +68,51 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
-```bash
-# Install Rust 1.91.1 (or use rustup)
-rustup install 1.91.1
-rustup target add x86_64-pc-windows-msvc   # Windows
-rustup target add x86_64-unknown-linux-gnu  # Linux
-```
+### 📥 Direct Download (No Build Required)
 
-### Build & Run
+Grab the latest binary for your platform from **[Releases](https://github.com/Ahmadsi70/DFIM/releases)**:
+
+| Platform | Download |
+|---|---|
+| 🐧 Linux x86\_64 | [dfim-linux-x86\_64.tar.gz](https://github.com/Ahmadsi70/DFIM/releases/latest/download/dfim-linux-x86_64.tar.gz) |
+| 🪟 Windows x86\_64 | [dfim-windows-x86\_64.zip](https://github.com/Ahmadsi70/DFIM/releases/latest/download/dfim-windows-x86_64.zip) |
+| 🔐 UEFI x86\_64 | [dfim-uefi-x86\_64.tar.gz](https://github.com/Ahmadsi70/DFIM/releases/latest/download/dfim-uefi-x86_64.tar.gz) |
+
+### 🛠️ Build from Source
+
 ```bash
-# Clone
+# Install Rust 1.91.1
+rustup install 1.91.1
+
+# Clone & build
 git clone https://github.com/Ahmadsi70/DFIM.git
 cd DFIM
 
-# Build the provisioner
+# Set your encryption key (IEC 62443 CR 1.8)
+export DFIM_CRYPTO_KEY="$(openssl rand -hex 32)"   # Linux/macOS
+
 cargo build --release -p dfim_cli_provisioner
-
-# Provision a boot image
 ./target/release/dfim-provisioner provision /path/to/boot_image.bin
-
-# Verify integrity
 ./target/release/dfim-provisioner verify /path/to/boot_image.bin
 ```
 
-### Start the Management API
+### 🐳 Run with Docker
+
 ```bash
-# With Docker Compose
-cd deploy
-docker-compose up -d
+# Clone, set env, and launch
+git clone https://github.com/Ahmadsi70/DFIM.git
+cd DFIM/deploy
+cp .env.example .env        # Edit .env with your passwords
+docker compose up -d
 
 # Health check
 curl http://localhost:3000/health
+```
+
+Or pull the pre-built image:
+
+```bash
+docker pull ghcr.io/ahmadsi70/dfim-management-api:latest
 ```
 
 ---
