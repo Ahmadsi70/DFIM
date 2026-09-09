@@ -21,9 +21,9 @@ IMPORTANT:
 #>
 
 param(
-    [string]$RepoPath = "C:\Users\badri\DFIM",
+    [string]$RepoPath = "$PSScriptRoot\..",
     [string]$BranchName = "feature/no-mistakes-windows",
-    [string]$KeyFilePath = "C:\Users\badri\.secrets\dfim_key.txt",
+    [string]$KeyFilePath = "$env:USERPROFILE\.secrets\dfim_key.txt",
     [switch]$RunNoMistakes  # set if you want the script to attempt to run the CLI
 )
 

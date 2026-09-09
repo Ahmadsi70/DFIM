@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """DFIM Ultimate Stress — Fast version, 5 tests, 10 min total"""
 import hashlib, json, os, random, signal, statistics, subprocess, sys, time, threading
@@ -31,7 +32,7 @@ def api(method, path, body=None):
 
 def login(): 
     global TOKEN
-    TOKEN = api("POST", "/v1/auth/login", {"username":"admin","password":"dfim_admin_2026"})[1].get("access_token","")
+    TOKEN = api("POST", "/v1/auth/login", {"username":"admin","password":"" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})[1].get("access_token","")
     return bool(TOKEN)
 
 # ═══════════════════════════════════════════════════════════════
@@ -134,7 +135,7 @@ def t3_db_crash():
     time.sleep(1)
     
     env = os.environ.copy()
-    env["DATABASE_URL"] = "postgres://dfim:dfim_prod_2026@localhost/dfim_production"
+    env["DATABASE_URL"] = "postgres://dfim:" + os.getenv("DFIM_DB_PASSWORD", "ci_test_password") + "@localhost/dfim_production"
     env["DFIM_JWT_SECRET"] = "prod-jwt-ultimate-v2"
     env["DFIM_API_BIND"] = "0.0.0.0:3000"
     env["PATH"] = "/root/.cargo/bin:" + env.get("PATH", "")

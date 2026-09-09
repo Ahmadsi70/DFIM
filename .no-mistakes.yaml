@@ -1,8 +1,8 @@
 allow_repo_commands: true
 
 commands:
-  test: cargo test --no-fail-fast -p dfim_core_engine -p dfim_cli_provisioner -p dfim_host_init -p dfim_windows_uefi -p dfim_management_api && set DFIM_BOOT_PUBLIC_KEY_HEX=02192ddca9054e556edc88291fc175180fbae21a75daeb61da0ad213e6eae293f5&& set DFIM_BOOT_KEY_ID_HEX=da6e8314cdf4d432e820d426b56b6de5&& set DFIM_BOOT_MIN_RELEASE=1&& cargo build --target x86_64-unknown-uefi -p dfim_windows_uefi --features uefi-app --release
-  lint: cargo clippy -p dfim_core_engine -p dfim_cli_provisioner -p dfim_host_init -p dfim_windows_uefi -p dfim_management_api --all-targets -- -D warnings && set DFIM_BOOT_PUBLIC_KEY_HEX=02192ddca9054e556edc88291fc175180fbae21a75daeb61da0ad213e6eae293f5&& set DFIM_BOOT_KEY_ID_HEX=da6e8314cdf4d432e820d426b56b6de5&& set DFIM_BOOT_MIN_RELEASE=1&& cargo clippy --target x86_64-unknown-uefi -p dfim_windows_uefi --features uefi-app -- -D warnings
+  test: cargo test --no-fail-fast -p dfim_core_engine -p dfim_cli_provisioner -p dfim_host_init -p dfim_windows_uefi -p dfim_management_api
+  lint: cargo clippy -p dfim_core_engine -p dfim_cli_provisioner -p dfim_host_init -p dfim_windows_uefi -p dfim_management_api --all-targets -- -D warnings
 
 ignore_patterns:
   - "target/**"

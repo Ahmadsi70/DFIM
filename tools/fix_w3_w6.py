@@ -32,7 +32,7 @@ print(f"  Asset count: {r.stdout.strip()}")
 
 # Benchmark
 print("  Benchmarking with optimized indexes...")
-data = json.dumps({"username": "admin", "password": "dfim_admin_2026"}).encode()
+data = json.dumps({"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""}).encode()
 req = urllib.request.Request(f"{API}/v1/auth/login", data=data,
                              headers={"Content-Type": "application/json"}, method="POST")
 token = json.loads(urllib.request.urlopen(req).read())["access_token"]

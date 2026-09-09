@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """DFIM ULTIMATE STRESS TEST — Real, not simulated. 96-core server."""
 import hashlib, json, os, random, signal, statistics, subprocess, sys, time, threading
@@ -40,7 +41,7 @@ def prepare():
     print("=" * 70)
     
     # Login
-    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "dfim_admin_2026"})
+    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})
     TOKEN = data.get("access_token", "")
     print(f"\n  Auth: {'OK' if TOKEN else 'FAILED'}")
     
@@ -302,7 +303,7 @@ def ultimate_db_crash():
     time.sleep(1)
     
     env = os.environ.copy()
-    env["DATABASE_URL"] = "postgres://dfim:dfim_prod_2026@localhost/dfim_production"
+    env["DATABASE_URL"] = "postgres://dfim:" + os.getenv("DFIM_DB_PASSWORD", "ci_test_password") + "@localhost/dfim_production"
     env["DFIM_JWT_SECRET"] = "prod-jwt-ultimate-test"
     env["DFIM_API_BIND"] = "0.0.0.0:3000"
     env["PATH"] = "/root/.cargo/bin:" + env.get("PATH", "")
@@ -322,7 +323,7 @@ def ultimate_db_crash():
     
     # Re-login
     TOKEN2 = None
-    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "dfim_admin_2026"})
+    code, data = api("POST", "/v1/auth/login", {"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""})
     TOKEN2 = data.get("access_token", "")
     
     # Verify data integrity

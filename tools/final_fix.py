@@ -34,7 +34,7 @@ print("BUILD SUCCESS")
 subprocess.Popen([f"{PROJECT}/target/release/dfim_management_api"],
                 env={**env, "DFIM_API_BIND": "0.0.0.0:3000",
                      "DFIM_JWT_SECRET": "prod-jwt-v3-fixed",
-                     "DATABASE_URL": "postgres://dfim:dfim_prod_2026@localhost/dfim_production"})
+                     "DATABASE_URL": "postgres://dfim:" + os.getenv("DFIM_DB_PASSWORD", "ci_test_password") + "@localhost/dfim_production"})
 time.sleep(4)
 
 # 4. Verify
@@ -63,7 +63,7 @@ for _ in range(200):
 print(f"Rate limit: {r200} ok, {r429} rate-limited (429)")
 
 # 7. Benchmark with indexes
-data = json.dumps({"username": "admin", "password": "dfim_admin_2026"}).encode()
+data = json.dumps({"username": "admin", "password": "" + os.getenv("DFIM_ADMIN_PASSWORD", "ci_test_admin_pass") + ""}).encode()
 req = urllib.request.Request("http://localhost:3000/v1/auth/login", data=data,
                              headers={"Content-Type": "application/json"}, method="POST")
 token = json.loads(urllib.request.urlopen(req).read())["access_token"]
