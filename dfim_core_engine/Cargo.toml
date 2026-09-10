@@ -11,7 +11,7 @@ build = "build.rs"
 unexpected_cfgs = { level = "warn", check-cfg = ["cfg(kani)"] }
 
 [dependencies]
-digest = { version = "0.10", default-features = false, optional = true }
+digest = { version = "0.11", default-features = false, optional = true }
 sha2 = { version = "0.10", default-features = false, optional = true, features = ["oid"] }
 hmac = { version = "0.12", default-features = false }
 hkdf = { version = "0.12", default-features = false }
