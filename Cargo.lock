@@ -1001,7 +1001,7 @@ name = "dfim_core_engine"
 version = "0.1.0"
 dependencies = [
  "aya",
- "digest 0.10.7",
+ "digest 0.11.3",
  "hkdf",
  "hmac 0.12.1",
  "litcrypt2_nostd",
