@@ -32,7 +32,7 @@ jobs:
           echo "IMAGE=${REGISTRY}/${OWNER}/dfim-management-api" >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
