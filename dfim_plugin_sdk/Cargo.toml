@@ -7,7 +7,7 @@ authors.workspace = true
 description = "DFIM Plugin SDK — WASM sandbox for custom enforcement policies (Phase 4 P4-M1)"
 
 [dependencies]
-wasmtime = "36"
+wasmtime = "48"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"
